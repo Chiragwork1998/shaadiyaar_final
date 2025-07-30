@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 27 100% 99%; /* #FFFBF5 creamy-offwhite */
+    --foreground: 258 82% 43%; /* #3A0CA3 deep-indigo (remains) */
+
+    --card: 0 0% 100%; 
+    --card-foreground: 258 82% 43%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 258 82% 43%;
+
+    /* Updated to Steel Blue Palette */
+    --primary: 207 44% 49%; /* #4682B4 steel-blue-main hsl(207, 44%, 49%) */
+    --primary-foreground: 0 0% 100%; /* White text on steel blue */
+
+    --secondary: 258 82% 43%; /* #3A0CA3 deep-indigo (remains for secondary) */
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 208 100% 97%; /* #F0F8FF steel-blue-wash (AliceBlue) hsl(208, 100%, 97%) */
+    --muted-foreground: 215 20% 45%; /* #6B7280 muted gray text (remains) */
+    
+    --accent: 214 100% 93%; /* #DDEBFF steel-blue-accent-bg hsl(214, 100%, 93%) */
+    --accent-foreground: 207 44% 49%; /* #4682B4 steel-blue-main for text on accent */
+
+    --destructive: 0 84% 60%; 
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 15% 75%; /* Neutral gray/light blue (remains) */
+    --input: 210 15% 75%; 
+    --ring: 207 44% 49%; /* #4682B4 steel-blue-main for focus rings */
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Dark Mode updates for Steel Blue */
+    --background: 207 30% 15%;   /* Dark steel blue for dark mode background */
+    --foreground: 27 100% 99%;     /* Creamy off-white for dark mode text */
+
+    --card: 207 30% 20%; 
+    --card-foreground: 27 100% 99%;
+
+    --popover: 207 30% 20%;
+    --popover-foreground: 27 100% 99%;
+
+    --primary: 207 44% 59%; /* Slightly lighter/brighter steel blue for dark mode primary */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 207 30% 40%; 
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 207 30% 25%;
+    --muted-foreground: 208 30% 75%; /* Lighter gray/blue for muted text */
+    
+    --accent: 207 30% 25%;
+    --accent-foreground: 27 100% 99%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 207 30% 30%;
+    --input: 207 30% 30%;
+    --ring: 207 44% 59%; /* Lighter/brighter steel blue for dark mode rings */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
