@@ -36,7 +36,7 @@ const BookingDetailsModal: React.FC<{
 
   const bookingPartPayments = partPayments.filter(p => p.booking_id === booking.booking_id);
   const totalPartPayments = bookingPartPayments.reduce((sum, p) => sum + p.amount, 0);
-  const actualBalance = (booking.total_amount || booking.net_amount) - booking.advance_paid - totalPartPayments;
+  const actualBalance = booking.total_amount - booking.advance_paid - totalPartPayments;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -2080,8 +2080,8 @@ const BookingTable: React.FC<BookingTableProps> = ({
       sum + payment.amount, 0
     );
     
-    // Calculate actual balance: net_amount - advance_paid - part_payments
-    const actualBalance = booking.net_amount - booking.advance_paid - totalPartPayments;
+    // Calculate actual balance: total_amount - advance_paid - part_payments
+    const actualBalance = booking.total_amount - booking.advance_paid - totalPartPayments;
     return Math.max(0, actualBalance); // Ensure balance doesn't go negative
   };
 
@@ -2242,7 +2242,7 @@ const BookingTable: React.FC<BookingTableProps> = ({
                   </div>
                   <div>
                     <div className="text-muted-foreground">Amount</div>
-                    <div className="font-medium">{formatIndianCurrency(booking.total_amount || booking.net_amount)}</div>
+                    <div className="font-medium">{formatIndianCurrency(booking.total_amount)}</div>
                   </div>
                   <div>
                     <div className="text-muted-foreground">Advance Paid</div>
@@ -2315,7 +2315,7 @@ const BookingTable: React.FC<BookingTableProps> = ({
                   <td className="py-3 px-4 text-muted-foreground text-sm">{booking.menu_preference || 'N/A'}</td>
                   {canViewFinancialData && (
                     <>
-                  <td className="py-3 px-4 font-medium text-sm">{formatIndianCurrency(booking.total_amount || booking.net_amount)}</td>
+                  <td className="py-3 px-4 font-medium text-sm">{formatIndianCurrency(booking.total_amount)}</td>
                   <td className="py-3 px-4 text-muted-foreground text-sm">{formatIndianCurrency(booking.advance_paid)}</td>
                   <td className="py-3 px-4 font-medium text-sm">{formatIndianCurrency(booking.balance_amount)}</td>
                     </>

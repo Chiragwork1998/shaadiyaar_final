@@ -96,7 +96,7 @@ const Payments = () => {
           due_date: booking.booking_date,
           status: 'received',
           booking_serial: booking.serial_no,
-          event_date: booking.event_date
+          event_date: booking.date_of_function
         });
       }
       
@@ -117,13 +117,13 @@ const Payments = () => {
           due_date: payment.payment_date,
           status: 'received',
           booking_serial: booking.serial_no,
-          event_date: booking.event_date
+          event_date: booking.date_of_function
         });
       });
       
       // Add final payment record (remaining balance)
       const totalPaid = booking.advance_paid + bookingPartPayments.reduce((sum, p) => sum + p.amount, 0);
-      const remainingBalance = booking.net_amount - totalPaid;
+      const remainingBalance = booking.total_amount - totalPaid;
       
       if (remainingBalance > 0) {
         records.push({
@@ -132,11 +132,11 @@ const Payments = () => {
           client_name: booking.client_name,
           payment_type: 'final',
           amount: remainingBalance,
-          payment_date: booking.event_date, // Due on event date
-          due_date: booking.event_date,
-          status: new Date(booking.event_date) < new Date() ? 'overdue' : 'pending',
+          payment_date: booking.date_of_function, // Due on event date
+          due_date: booking.date_of_function,
+          status: new Date(booking.date_of_function) < new Date() ? 'overdue' : 'pending',
           booking_serial: booking.serial_no,
-          event_date: booking.event_date
+          event_date: booking.date_of_function
         });
       }
     });
@@ -145,7 +145,7 @@ const Payments = () => {
   };
 
   const calculateStats = (bookings: Booking[], partPayments: PartPayment[]) => {
-    const totalDue = bookings.reduce((sum, booking) => sum + booking.net_amount, 0);
+    const totalDue = bookings.reduce((sum, booking) => sum + booking.total_amount, 0);
     const totalReceived = bookings.reduce((sum, booking) => {
       const bookingPartPayments = partPayments.filter(payment => 
         payment.booking_id === booking.booking_id
@@ -167,8 +167,8 @@ const Payments = () => {
       const totalPartPayments = bookingPartPayments.reduce((paymentSum, payment) => 
         paymentSum + payment.amount, 0
       );
-      const remainingBalance = booking.net_amount - booking.advance_paid - totalPartPayments;
-      const eventDate = new Date(booking.event_date);
+      const remainingBalance = booking.total_amount - booking.advance_paid - totalPartPayments;
+      const eventDate = new Date(booking.date_of_function);
       return remainingBalance > 0 && eventDate < today;
     }).length;
 

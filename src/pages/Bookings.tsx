@@ -93,14 +93,14 @@ const Bookings = () => {
         booking.advance_paid = 0;
       }
       
-      // Ensure net_amount is a number and not null/undefined
-      if (typeof booking.net_amount !== 'number' || isNaN(booking.net_amount)) {
-        console.warn(`Fixing booking ${booking.booking_id}: net_amount is invalid, setting to 0`);
-        booking.net_amount = 0;
+      // Ensure total_amount is a number and not null/undefined
+      if (typeof booking.total_amount !== 'number' || isNaN(booking.total_amount)) {
+        console.warn(`Fixing booking ${booking.booking_id}: total_amount is invalid, setting to 0`);
+        booking.total_amount = 0;
       }
       
       // Ensure balance_amount is calculated correctly
-      const calculatedBalance = booking.net_amount - booking.advance_paid;
+      const calculatedBalance = booking.total_amount - booking.advance_paid;
       if (booking.balance_amount !== calculatedBalance) {
         console.warn(`Fixing booking ${booking.booking_id}: balance_amount mismatch, updating from ${booking.balance_amount} to ${calculatedBalance}`);
         booking.balance_amount = calculatedBalance;
@@ -324,10 +324,10 @@ const Bookings = () => {
     const allBookings = bookingsData; // Include all bookings for total count
     
     const totalBookings = allBookings.length; // Count ALL bookings (including pending)
-    const totalRevenue = confirmedBookings.reduce((sum, booking) => sum + booking.net_amount, 0);
+    const totalRevenue = confirmedBookings.reduce((sum, booking) => sum + booking.total_amount, 0);
 
     console.log('=== CALCULATION DEBUG ===');
-    console.log('All bookings:', bookingsData.map(b => ({ id: b.booking_id, serial: b.serial_no, client: b.client_name, net: b.net_amount, advance: b.advance_paid, is_pending: b.is_pending })));
+    console.log('All bookings:', bookingsData.map(b => ({ id: b.booking_id, serial: b.serial_no, client: b.client_name, total: b.total_amount, advance: b.advance_paid, is_pending: b.is_pending })));
     console.log('All part payments:', paymentsData.map(p => ({ id: p.payment_id, booking_id: p.booking_id, amount: p.amount, is_pending: p.is_pending })));
 
     const pendingBalance = confirmedBookings.reduce((sum, booking) => {
@@ -347,18 +347,18 @@ const Bookings = () => {
       // Calculate total part payments for this booking
       const totalPartPayments = bookingPartPayments.reduce((paymentSum, p) => paymentSum + p.amount, 0);
       
-      // Calculate actual balance: net_amount - advance_paid - part_payments
-      const actualBalance = booking.net_amount - booking.advance_paid - totalPartPayments;
+      // Calculate actual balance: total_amount - advance_paid - part_payments
+      const actualBalance = booking.total_amount - booking.advance_paid - totalPartPayments;
       
       // Debug logging for the specific booking
       console.log(`Booking ${booking.serial_no} (${booking.client_name}):`, {
         booking_id: booking.booking_id,
-        net_amount: booking.net_amount,
+        total_amount: booking.total_amount,
         advance_paid: booking.advance_paid,
         part_payments: bookingPartPayments.map(p => ({ id: p.payment_id, amount: p.amount })),
         total_part_payments: totalPartPayments,
         actual_balance: actualBalance,
-        calculation: `${booking.net_amount} - ${booking.advance_paid} - ${totalPartPayments} = ${actualBalance}`
+        calculation: `${booking.total_amount} - ${booking.advance_paid} - ${totalPartPayments} = ${actualBalance}`
       });
       
       // Only add positive balances (no negative pending amounts)
