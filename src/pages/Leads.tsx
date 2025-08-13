@@ -51,36 +51,57 @@ const Leads = () => {
   useEffect(() => {
     loadLeads();
 
-    const subscription = supabase
-      .channel('leads-channel')
+    // Simple and reliable real-time subscription
+    const channel = supabase.channel('leads-changes')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'leads' },
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'leads' 
+        },
         (payload) => {
-          console.log('Real-time update received:', payload);
-          setLeads(currentLeads => {
-            if (payload.eventType === 'UPDATE') {
+          console.log('Real-time change detected:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            console.log('New lead inserted:', payload.new);
+            setLeads(currentLeads => {
+              const updatedLeads = [payload.new as Lead, ...currentLeads];
+              calculateStats(updatedLeads);
+              return updatedLeads;
+            });
+            toast.success('New lead added!');
+          } else if (payload.eventType === 'UPDATE') {
+            console.log('Lead updated:', payload.new);
+            setLeads(currentLeads => {
               return currentLeads.map(lead =>
                 lead.lead_id === payload.new.lead_id ? (payload.new as Lead) : lead
               );
-            } else if (payload.eventType === 'INSERT') {
-              return [payload.new as Lead, ...currentLeads];
-            } else if (payload.eventType === 'DELETE') {
-              if (selectedLead?.lead_id === payload.old.lead_id) {
-                setSelectedLead(null);
-                setIsEditMode(false);
-                toast.error('This lead has been deleted');
-              }
-              return currentLeads.filter(lead => lead.lead_id !== payload.old.lead_id);
+            });
+          } else if (payload.eventType === 'DELETE') {
+            console.log('Lead deleted:', payload.old);
+            if (selectedLead?.lead_id === payload.old.lead_id) {
+              setSelectedLead(null);
+              setIsEditMode(false);
             }
-            return currentLeads;
-          });
+            setLeads(currentLeads => {
+              return currentLeads.filter(lead => lead.lead_id !== payload.old.lead_id);
+            });
+          }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Real-time subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Real-time updates enabled');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Real-time subscription failed');
+        }
+      });
 
     return () => {
-      supabase.removeChannel(subscription);
+      console.log('Cleaning up real-time subscription');
+      supabase.removeChannel(channel);
     };
   }, [selectedLead?.lead_id]);
 
@@ -237,42 +258,57 @@ const Leads = () => {
   };
 
   return (
-    <div className="bg-background">
-      <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pt-4 md:pt-0">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-serif font-semibold text-foreground">
+    <div className="bg-background min-h-screen overflow-x-hidden">
+      <div className="w-full space-y-4 p-3 md:p-6 max-w-full overflow-x-hidden">
+        {/* Header Section - Compact for Mobile */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col gap-3 overflow-x-hidden"
+        >
+          <div className="overflow-x-hidden">
+            <h1 className="text-lg md:text-2xl font-semibold text-foreground">
               Lead Management
             </h1>
-            <p className="text-muted-foreground mt-1">Manage and track all your wedding leads</p>
+            <p className="text-xs md:text-sm text-muted-foreground mt-1">
+              Manage and track all your wedding leads
+            </p>
           </div>
-          <Button 
-            className="bg-primary text-primary-foreground hover:bg-accent-vibrant-purple-darker shadow-lg shadow-primary/20 w-full md:w-auto"
-          >
-            <Plus className="w-5 h-5 mr-2" /> Add Lead
-          </Button>
-        </div>
+        </motion.div>
 
-        {/* Stats Overview */}
-        <LeadStats {...stats} />
+        {/* Stats Overview - Compact Grid */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="overflow-x-hidden"
+        >
+          <LeadStats {...stats} />
+        </motion.div>
 
-        {/* Lead Table */}
-        <LeadTable
-          leads={processedLeads}
-          searchQuery={searchQuery}
-          onSearchChange={(e) => setSearchQuery(e.target.value)}
-          onStatusChange={handleStatusChange}
-          onLeadView={handleViewClick}
-          onLeadEdit={handleEditClick}
-          onLeadShare={shareOnWhatsApp}
-          onLeadDelete={loadLeads}
-          updatingStatus={updatingStatus}
-          onLeadTypeChange={setSelectedLeadType}
-          selectedLeadType={selectedLeadType}
-          sortConfig={sortConfig}
-          requestSort={requestSort}
-        />
+        {/* Lead Table - Mobile Optimized */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="overflow-x-hidden"
+        >
+          <LeadTable
+            leads={processedLeads}
+            searchQuery={searchQuery}
+            onSearchChange={(e) => setSearchQuery(e.target.value)}
+            onStatusChange={handleStatusChange}
+            onLeadView={handleViewClick}
+            onLeadEdit={handleEditClick}
+            onLeadShare={shareOnWhatsApp}
+            onLeadDelete={loadLeads}
+            updatingStatus={updatingStatus}
+            onLeadTypeChange={setSelectedLeadType}
+            selectedLeadType={selectedLeadType}
+            sortConfig={sortConfig}
+            requestSort={requestSort}
+          />
+        </motion.div>
       </div>
 
       <LeadDetailsSheet

@@ -86,3 +86,138 @@ export const getStatusText = (status: string): string => {
   const statusItem = LEAD_STATUSES.find(s => s.value === status.toLowerCase());
   return statusItem?.label || status;
 };
+
+// New Booking Constants for ROUGH ESTIMATE Form
+export const BOOKING_UNITS = [
+  { value: 'UNIT-1', label: 'UNIT-1' },
+  { value: 'UNIT-2', label: 'UNIT-2' },
+  { value: 'UNIT-3', label: 'UNIT-3' },
+  { value: 'UNIT-4', label: 'UNIT-4' }
+] as const;
+
+export const OCCASIONS = [
+  { value: 'Wedding', label: 'Wedding' },
+  { value: 'Birthday', label: 'Birthday' },
+  { value: 'Anniversary', label: 'Anniversary' },
+  { value: 'Corporate Event', label: 'Corporate Event' },
+  { value: 'Engagement', label: 'Engagement' },
+  { value: 'Reception', label: 'Reception' },
+  { value: 'Other', label: 'Other' }
+] as const;
+
+export const HALLS = [
+  { value: 'Main Hall', label: 'Main Hall' },
+  { value: 'VIP Hall', label: 'VIP Hall' },
+  { value: 'Garden Area', label: 'Garden Area' },
+  { value: 'Outdoor Area', label: 'Outdoor Area' },
+  { value: 'Private Room', label: 'Private Room' }
+] as const;
+
+export const MEAL_TYPES = [
+  { value: 'Lunch', label: 'Lunch' },
+  { value: 'Dinner', label: 'Dinner' },
+  { value: 'Both', label: 'Both' }
+] as const;
+
+export const MENU_OPTIONS = [
+  { value: 'Veg Menu', label: 'Veg Menu' },
+  { value: 'Non-Veg Menu', label: 'Non-Veg Menu' },
+  { value: 'Mixed Menu', label: 'Mixed Menu' },
+  { value: 'Premium Veg', label: 'Premium Veg' },
+  { value: 'Premium Non-Veg', label: 'Premium Non-Veg' },
+  { value: 'Custom Menu', label: 'Custom Menu' }
+] as const;
+
+export const ONION_PREFERENCES = [
+  { value: 'Yes', label: 'Yes' },
+  { value: 'No', label: 'No' },
+  { value: 'Optional', label: 'Optional' }
+] as const;
+
+export const GARLIC_PREFERENCES = [
+  { value: 'Yes', label: 'Yes' },
+  { value: 'No', label: 'No' },
+  { value: 'Optional', label: 'Optional' }
+] as const;
+
+export const FLOWER_DECORATIONS = [
+  { value: 'Basic', label: 'Basic' },
+  { value: 'Premium', label: 'Premium' },
+  { value: 'Luxury', label: 'Luxury' },
+  { value: 'Custom', label: 'Custom' },
+  { value: 'None', label: 'None' }
+] as const;
+
+// Legacy constants for backward compatibility
+export const BOOKING_SLOTS = [
+  { value: 'Breakfast', label: 'Breakfast' },
+  { value: 'Lunch', label: 'Lunch' },
+  { value: 'Dinner', label: 'Dinner' },
+  { value: 'Custom', label: 'Custom' }
+] as const;
+
+export const MENU_PREFERENCES = [
+  { value: 'Veg Platinum', label: 'Veg Platinum' },
+  { value: 'Non-Veg Platinum', label: 'Non-Veg Platinum' },
+  { value: 'Veg Gold', label: 'Veg Gold' },
+  { value: 'Non-Veg Gold', label: 'Non-Veg Gold' },
+  { value: 'Veg Silver', label: 'Veg Silver' },
+  { value: 'Non-Veg Silver', label: 'Non-Veg Silver' },
+  { value: 'Custom', label: 'Custom' }
+] as const;
+
+export const BOOKING_STATUSES = [
+  { value: 'pending_approval', label: 'Pending Approval', dotColor: 'bg-orange-400', triggerStyle: 'bg-orange-400/10 text-orange-700 hover:bg-orange-400/20' },
+  { value: 'pending', label: 'Pending', dotColor: 'bg-yellow-400', triggerStyle: 'bg-yellow-400/10 text-yellow-700 hover:bg-yellow-400/20' },
+  { value: 'confirmed', label: 'Confirmed', dotColor: 'bg-theme-green', triggerStyle: 'bg-theme-green/10 text-theme-green hover:bg-theme-green/20' },
+  { value: 'completed', label: 'Completed', dotColor: 'bg-blue-500', triggerStyle: 'bg-blue-500/10 text-blue-700 hover:bg-blue-500/20' },
+  { value: 'cancelled', label: 'Cancelled', dotColor: 'bg-destructive', triggerStyle: 'bg-destructive/10 text-destructive hover:bg-destructive/20' }
+] as const;
+
+export const getBookingStatusStyle = (status: string): string => {
+  const styles: { [key: string]: string } = {
+    'pending_approval': 'bg-orange-100 text-orange-700 dark:bg-orange-700/20 dark:text-orange-400',
+    'pending': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-700/20 dark:text-yellow-400',
+    'confirmed': 'bg-green-100 text-green-700 dark:bg-green-700/20 dark:text-green-400',
+    'completed': 'bg-blue-100 text-blue-700 dark:bg-blue-700/20 dark:text-blue-400',
+    'cancelled': 'bg-red-100 text-red-700 dark:bg-red-700/20 dark:text-red-400'
+  };
+  return styles[status] || 'bg-accent text-muted-foreground';
+};
+
+export const getBookingStatusDotColor = (status: string | undefined | null): string => {
+  if (!status) return 'bg-muted-foreground';
+  const statusItem = BOOKING_STATUSES.find(s => s.value === status.toLowerCase());
+  return statusItem?.dotColor || 'bg-muted-foreground';
+};
+
+export const getBookingStatusTriggerStyle = (status: string | undefined | null): string => {
+  if (!status) return 'bg-input text-foreground hover:bg-input/80';
+  const statusItem = BOOKING_STATUSES.find(s => s.value === status.toLowerCase());
+  return statusItem?.triggerStyle || 'bg-input text-foreground hover:bg-input/80';
+};
+
+export const getBookingStatusText = (status: string): string => {
+  const statusItem = BOOKING_STATUSES.find(s => s.value === status.toLowerCase());
+  return statusItem?.label || status;
+};
+
+export const generateSerialNumber = (): string => {
+  // Generate online booking number in format O1, O2, O3, etc.
+  const randomNum = Math.floor(Math.random() * 999) + 1;
+  return `O${randomNum}`;
+};
+
+// Async version for sequential serial numbers
+export const generateSequentialSerialNumber = async (): Promise<string> => {
+  try {
+    // Import the function dynamically to avoid circular dependencies
+    const { getNextSerialNumber } = await import('../lib/supabase');
+    return await getNextSerialNumber();
+  } catch (error) {
+    console.error('Error generating sequential serial number:', error);
+    // Fallback to random number
+    const randomNum = Math.floor(Math.random() * 999) + 1;
+    return `O${randomNum}`;
+  }
+};

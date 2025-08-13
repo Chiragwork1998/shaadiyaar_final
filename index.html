@@ -4,7 +4,25 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Wedify - Wedding Management Platform</title>
+    <title>Shaadiyaar - Wedding Management Platform</title>
+    
+    <!-- PWA Meta Tags for Mobile Web App -->
+    <meta name="theme-color" content="#8b5cf6" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Shaadiyaar" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="Shaadiyaar" />
+    <meta name="msapplication-TileColor" content="#8b5cf6" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    <meta name="description" content="Complete wedding management platform for venues and planners" />
+    
+    <!-- PWA Icons -->
+    <link rel="apple-touch-icon" href="/shaadiyaar_logo.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/shaadiyaar_logo.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/shaadiyaar_logo.png" />
+    <link rel="manifest" href="/manifest.json" />
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -12,5 +30,20 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Service Worker Registration for PWA -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('SW registered: ', registration);
+            })
+            .catch((registrationError) => {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      }
+    </script>
   </body>
 </html>

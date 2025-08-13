@@ -1,311 +1,520 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, parseISO, isToday } from 'date-fns';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus, Filter, TrendingUp, Users, Clock } from 'lucide-react';
-import { Lead } from '../types';
-import { fetchLeads } from '../lib/supabase';
-import { formatDate } from '../utils/helpers';
-import LeadDetailsSheet from '../components/leads/LeadDetailsSheet';
+import { 
+  Calendar as CalendarIcon,
+  Plus,
+  Clock,
+  MapPin,
+  User,
+  Phone,
+  Edit,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  Settings
+} from 'lucide-react';
 import { Button } from '../components/ui/Button';
-import toast from 'react-hot-toast';
+import { Event } from '../types';
+import { 
+  fetchEvents, 
+  createEvent, 
+  updateEvent, 
+  deleteEvent,
+  fetchBlockedDates,
+  createBlockedDate,
+  deleteBlockedDate,
+  supabase
+} from '../lib/supabase';
+import CalendarWidget from '../components/calendar/CalendarWidget';
+import EventList from '../components/calendar/EventList';
+import EventForm from '../components/calendar/EventForm';
+import UpcomingEvents from '../components/calendar/UpcomingEvents';
+import QuickStats from '../components/calendar/QuickStats';
+import AvailableActions from '../components/calendar/AvailableActions';
 
 const Calendar = () => {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [blockedDates, setBlockedDates] = useState<any[]>([]);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [loading, setLoading] = useState(true);
-  const [hoveredDate, setHoveredDate] = useState<Date | null>(null);
+  const [showEventForm, setShowEventForm] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [showBlockDateForm, setShowBlockDateForm] = useState(false);
 
+  // Calculate stats
+  const stats = useMemo(() => {
+    const totalEvents = events.length;
+    
+    // Filter events by type with proper validation
+    const allBookings = events.filter(event => {
+      try {
+        return event.event_type === 'booking';
+      } catch (error) {
+        console.warn('Error filtering booking events:', error);
+        return false;
+      }
+    });
+    
+    // Count only actual bookings from bookings table (not manual booking events)
+    const actualBookings = allBookings.filter(event => {
+      try {
+        return event.event_id.toString().startsWith('booking_');
+      } catch (error) {
+        console.warn('Error filtering actual bookings:', error);
+        return false;
+      }
+    }).length;
+    
+    const tastings = events.filter(event => {
+      try {
+        return event.event_type === 'tasting';
+      } catch (error) {
+        console.warn('Error filtering tasting events:', error);
+        return false;
+      }
+    }).length;
+    
+    const confirmed = events.filter(event => {
+      try {
+        return event.status === 'confirmed';
+      } catch (error) {
+        console.warn('Error filtering confirmed events:', error);
+        return false;
+      }
+    }).length;
+
+    // Debug logging
+    console.log('Calendar Stats Calculation:', {
+      totalEvents,
+      actualBookings,
+      manualBookings: allBookings.length - actualBookings,
+      tastings,
+      confirmed,
+      eventTypes: events.map(e => ({ 
+        id: e.event_id, 
+        type: e.event_type, 
+        status: e.status,
+        isActualBooking: e.event_id.toString().startsWith('booking_')
+      }))
+    });
+
+    return {
+      totalEvents,
+      bookings: actualBookings, // Only count actual bookings from bookings table
+      tastings,
+      confirmed
+    };
+  }, [events]);
+
+  // Get events for selected date
+  const selectedDateEvents = useMemo(() => {
+    const selectedDateStr = selectedDate.toISOString().split('T')[0];
+    return events.filter(event => {
+      try {
+        const eventDate = new Date(event.start_date);
+        if (isNaN(eventDate.getTime())) {
+          console.warn('Invalid date for event:', event);
+          return false;
+        }
+        const eventDateStr = eventDate.toISOString().split('T')[0];
+        return eventDateStr === selectedDateStr;
+      } catch (error) {
+        console.warn('Error processing event date:', event, error);
+        return false;
+      }
+    });
+  }, [events, selectedDate]);
+
+  // Get upcoming events (next 5)
+  const upcomingEvents = useMemo(() => {
+    const now = new Date();
+    return events
+      .filter(event => {
+        try {
+          const eventDate = new Date(event.start_date);
+          if (isNaN(eventDate.getTime())) {
+            console.warn('Invalid date for event:', event);
+            return false;
+          }
+          return eventDate > now;
+        } catch (error) {
+          console.warn('Error processing event date:', event, error);
+          return false;
+        }
+      })
+      .sort((a, b) => {
+        try {
+          const dateA = new Date(a.start_date);
+          const dateB = new Date(b.start_date);
+          if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) {
+            return 0;
+          }
+          return dateA.getTime() - dateB.getTime();
+        } catch (error) {
+          console.warn('Error sorting events:', error);
+          return 0;
+        }
+      })
+      .slice(0, 5);
+  }, [events]);
+
+  // Load data
   useEffect(() => {
-    loadLeads();
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [eventsData, blockedDatesData] = await Promise.all([
+          fetchEvents(),
+          fetchBlockedDates()
+        ]);
+        setEvents(eventsData);
+        setBlockedDates(blockedDatesData);
+      } catch (error) {
+        console.error('Error loading calendar data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
   }, []);
 
-  const loadLeads = async () => {
-    try {
-      setLoading(true);
-      const data = await fetchLeads();
-      setLeads(data);
-    } catch (error) {
-      console.error('Error loading leads:', error);
-      toast.error('Failed to load leads');
-    } finally {
-      setLoading(false);
-    }
+  // Real-time subscription for events
+  useEffect(() => {
+    const channel = supabase
+      .channel('events_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, (payload) => {
+        console.log('Event change:', payload);
+        if (payload.eventType === 'INSERT') {
+          setEvents(prev => [...prev, payload.new as Event]);
+        } else if (payload.eventType === 'UPDATE') {
+          setEvents(prev => prev.map(event => 
+            event.event_id === payload.new.event_id ? payload.new as Event : event
+          ));
+        } else if (payload.eventType === 'DELETE') {
+          setEvents(prev => prev.filter(event => event.event_id !== payload.old.event_id));
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Real-time subscription for bookings (to sync with calendar)
+  useEffect(() => {
+    const channel = supabase
+      .channel('bookings_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, async (payload) => {
+        console.log('Booking change detected:', payload);
+        
+        // Reload all events to get updated booking data
+        try {
+          const updatedEvents = await fetchEvents();
+          setEvents(updatedEvents);
+        } catch (error) {
+          console.error('Error reloading events after booking change:', error);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date);
   };
 
-  const daysInMonth = eachDayOfInterval({
-    start: startOfMonth(currentDate),
-    end: endOfMonth(currentDate)
-  });
-
-  const previousMonth = () => {
-    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
-  };
-
-  const nextMonth = () => {
-    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
-  };
-
-  const getLeadsForDay = (date: Date) => {
-    return leads.filter(lead => {
-      const weddingDate = parseISO(lead.wedding_date);
-      const createDate = parseISO(lead.lead_create_date);
-      return (
-        isSameDay(weddingDate, date) ||
-        isSameDay(createDate, date)
-      );
+  const handleMonthChange = (direction: 'prev' | 'next') => {
+    setCurrentMonth(prev => {
+      const newMonth = new Date(prev);
+      if (direction === 'prev') {
+        newMonth.setMonth(newMonth.getMonth() - 1);
+      } else {
+        newMonth.setMonth(newMonth.getMonth() + 1);
+      }
+      return newMonth;
     });
   };
 
-  const handleDayClick = (date: Date) => {
-    const dayLeads = getLeadsForDay(date);
-    if (dayLeads.length > 0) {
-      setSelectedLead(dayLeads[0]);
+  const handleCreateEvent = async (eventData: any) => {
+    try {
+      const newEvent = await createEvent({
+        ...eventData,
+        start_date: eventData.start_date,
+        end_date: eventData.end_date
+      });
+      
+      if (newEvent) {
+        setEvents(prev => [...prev, newEvent]);
+        setShowEventForm(false);
+      }
+    } catch (error) {
+      console.error('Error creating event:', error);
     }
   };
 
-  const upcomingWeddings = leads.filter(lead => {
-    const weddingDate = parseISO(lead.wedding_date);
-    return weddingDate > new Date() && lead.status === 'booked';
-  }).length;
+  const handleUpdateEvent = async (eventData: any) => {
+    try {
+      const { eventId, ...updates } = eventData;
+      const updatedEvent = await updateEvent(eventId, updates);
+      
+      if (updatedEvent) {
+        setEvents(prev => prev.map(event => 
+          event.event_id === eventId ? updatedEvent : event
+        ));
+        setShowEventForm(false);
+        setEditingEvent(null);
+      }
+    } catch (error) {
+      console.error('Error updating event:', error);
+    }
+  };
 
-  const newLeadsThisMonth = leads.filter(lead => {
-    const createDate = parseISO(lead.lead_create_date);
-    const thisMonth = new Date();
-    return createDate.getMonth() === thisMonth.getMonth() && createDate.getFullYear() === thisMonth.getFullYear();
-  }).length;
+  const handleDeleteEvent = async (eventId: number) => {
+    try {
+      await deleteEvent(eventId);
+      setEvents(prev => prev.filter(event => event.event_id !== eventId));
+    } catch (error) {
+      console.error('Error deleting event:', error);
+    }
+  };
 
-  const StatCard = ({ title, value, icon: Icon, bgColor, iconColor }: any) => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-card rounded-2xl border border-border p-6 shadow-lg hover:shadow-xl transition-shadow"
-    >
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-muted-foreground text-sm font-medium">{title}</p>
-          <p className="text-2xl font-bold text-foreground mt-1">{value}</p>
-        </div>
-        <div className={`p-3 ${bgColor} rounded-xl`}>
-          <Icon className={`w-5 h-5 ${iconColor}`} />
+  const handleEditEvent = (event: Event) => {
+    setEditingEvent(event);
+    setShowEventForm(true);
+  };
+
+  const handleSyncGoogleCalendar = () => {
+    // Placeholder for Google Calendar sync
+    console.log('Google Calendar sync functionality would be implemented here');
+    alert('Google Calendar sync is not yet implemented. This would integrate with Google Calendar API.');
+  };
+
+  const handleGenerateTastingSlots = () => {
+    // Placeholder for tasting slot generation
+    console.log('Generate tasting slots functionality would be implemented here');
+    alert('Tasting slot generation would create multiple tasting appointments based on availability.');
+  };
+
+  const handleBlockDate = async (startDate: string, endDate: string, reason: string) => {
+    try {
+      const newBlock = await createBlockedDate({
+        start_date: startDate,
+        end_date: endDate,
+        reason
+      });
+      
+      if (newBlock) {
+        setBlockedDates(prev => [...prev, newBlock]);
+        setShowBlockDateForm(false);
+      }
+    } catch (error) {
+      console.error('Error blocking date:', error);
+    }
+  };
+
+  const formatSelectedDate = (date: Date) => {
+    return date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-sm text-muted-foreground">Loading calendar...</p>
         </div>
       </div>
-    </motion.div>
-  );
+    );
+  }
 
   return (
-    <div className="bg-background">
-      <div className="max-w-7xl mx-auto space-y-8 p-6">
+    <div className="bg-background min-h-screen">
+      <div className="w-full space-y-4 p-3 md:p-6">
         {/* Header Section */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+          className="flex flex-col gap-3"
         >
-          <div>
-            <h1 className="text-4xl font-serif font-semibold text-foreground">
-              Wedding Calendar
-            </h1>
-            <p className="text-muted-foreground mt-2 text-lg">Track your leads and upcoming weddings</p>
-          </div>
-          <div className="flex gap-3">
-            <Button variant="outline">
-              <Filter className="w-5 h-5 mr-2" /> Filter
-            </Button>
-            <Button variant="primary">
-              <Plus className="w-5 h-5 mr-2" /> Add Event
-            </Button>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h1 className="text-base md:text-lg lg:text-2xl font-semibold text-foreground">
+                Calendar Integration
+              </h1>
+              <p className="text-xs md:text-sm text-muted-foreground mt-1">
+                Manage events, bookings, and tasting appointments
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button
+                onClick={handleSyncGoogleCalendar}
+                className="bg-primary text-primary-foreground hover:bg-accent-vibrant-purple-darker shadow-lg shadow-primary/20 h-8 md:h-9 text-xs md:text-sm w-full sm:w-auto"
+              >
+                <ExternalLink className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />
+                Sync with Google Calendar
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleGenerateTastingSlots}
+                className="h-8 md:h-9 text-xs md:text-sm w-full sm:w-auto"
+              >
+                <Clock className="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2" />
+                Generate Tasting Slots
+              </Button>
+            </div>
           </div>
         </motion.div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <StatCard
-            title="Total Leads"
-            value={leads.length}
-            icon={Users}
-            bgColor="bg-primary"
-            iconColor="text-primary-foreground"
-          />
-          <StatCard
-            title="New This Month"
-            value={newLeadsThisMonth}
-            icon={TrendingUp}
-            bgColor="bg-theme-green"
-            iconColor="text-primary-foreground"
-          />
-          <StatCard
-            title="Upcoming Weddings"
-            value={upcomingWeddings}
-            icon={Clock}
-            bgColor="bg-yellow-500"
-            iconColor="text-white"
-          />
+        {/* Main Calendar Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+          {/* Left Column - Calendar Widget */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="lg:col-span-2"
+          >
+            <CalendarWidget
+              currentMonth={currentMonth}
+              selectedDate={selectedDate}
+              events={events}
+              blockedDates={blockedDates}
+              onDateSelect={handleDateSelect}
+              onMonthChange={handleMonthChange}
+            />
+          </motion.div>
+
+          {/* Right Column - Info and Actions */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="space-y-4"
+          >
+            {/* Upcoming Events */}
+            <UpcomingEvents events={upcomingEvents} onEventClick={handleEditEvent} />
+
+            {/* Quick Stats */}
+            <QuickStats {...stats} />
+
+            {/* Available Actions */}
+            <AvailableActions
+              onScheduleEvent={() => setShowEventForm(true)}
+              onGenerateTastingSlots={handleGenerateTastingSlots}
+              onBlockDate={() => setShowBlockDateForm(true)}
+              onSyncGoogleCalendar={handleSyncGoogleCalendar}
+            />
+          </motion.div>
         </div>
 
-        {/* Calendar Container */}
+        {/* Events for Selected Date */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-card rounded-2xl shadow-lg border border-border overflow-hidden"
+          transition={{ delay: 0.3 }}
         >
-          {/* Calendar Header */}
-          <div className="p-6 border-b border-border">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="h-12 w-12 bg-primary rounded-xl flex items-center justify-center">
-                  <CalendarIcon className="h-6 w-6 text-primary-foreground" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-serif font-semibold text-foreground">
-                    {format(currentDate, 'MMMM yyyy')}
-                  </h2>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Click on dates with events to view details
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={previousMonth}
-                  className="h-10 w-10 rounded-full hover:bg-accent transition-colors"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={nextMonth}
-                  className="h-10 w-10 rounded-full hover:bg-accent transition-colors"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Calendar Grid */}
-          <div className="p-6">
-            {/* Weekday Headers */}
-            <div className="grid grid-cols-7 mb-4">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                <div
-                  key={day}
-                  className="text-center text-sm font-semibold text-muted-foreground py-3 uppercase tracking-wider"
-                >
-                  {day}
-                </div>
-              ))}
-            </div>
-
-            {/* Calendar Days */}
-            <div className="grid grid-cols-7 gap-2">
-              {Array.from({ length: startOfMonth(currentDate).getDay() }).map((_, index) => (
-                <div key={`empty-${index}`} className="aspect-square" />
-              ))}
-
-              {daysInMonth.map((date, dateIndex) => {
-                const dayLeads = getLeadsForDay(date);
-                const hasWedding = dayLeads.some(lead => isSameDay(parseISO(lead.wedding_date), date));
-                const hasNewLead = dayLeads.some(lead => isSameDay(parseISO(lead.lead_create_date), date));
-                const isCurrentMonth = isSameMonth(date, currentDate);
-                const isCurrentDay = isToday(date);
-
-                return (
-                  <motion.div
-                    key={dateIndex}
-                    className={`
-                      aspect-square p-3 rounded-xl relative border transition-all duration-200
-                      ${isCurrentMonth ? 'bg-card' : 'bg-muted/50'}
-                      ${dayLeads.length > 0 ? 'cursor-pointer hover:shadow-lg' : 'hover:bg-accent'}
-                      ${isCurrentDay ? 'ring-2 ring-primary border-primary' : 'border-border'}
-                      ${dayLeads.length > 0 ? 'hover:border-primary' : ''}
-                    `}
-                    onClick={() => handleDayClick(date)}
-                    onMouseEnter={() => setHoveredDate(date)}
-                    onMouseLeave={() => setHoveredDate(null)}
-                    whileHover={{ scale: dayLeads.length > 0 ? 1.02 : 1 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <div className="flex items-start justify-between">
-                      <span className={`
-                        text-sm font-semibold rounded-full w-8 h-8 flex items-center justify-center
-                        ${isCurrentDay ? 'bg-primary text-primary-foreground' : 'text-foreground'}
-                        ${!isCurrentMonth && 'text-muted-foreground'}
-                      `}>
-                        {format(date, 'd')}
-                      </span>
-                      <div className="flex space-x-1">
-                        {hasWedding && (
-                          <div className="w-2 h-2 rounded-full bg-primary" />
-                        )}
-                        {hasNewLead && (
-                          <div className="w-2 h-2 rounded-full bg-theme-green" />
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="mt-2 space-y-1">
-                      {dayLeads.slice(0, 2).map((lead) => (
-                        <motion.div
-                          key={lead.lead_id}
-                          className={`
-                            text-xs font-medium truncate px-2 py-1 rounded-md
-                            ${isSameDay(parseISO(lead.wedding_date), date)
-                              ? 'bg-primary/10 text-primary border border-primary/20'
-                              : 'bg-theme-green/10 text-theme-green border border-theme-green/20'
-                            }
-                          `}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          {lead.name}
-                        </motion.div>
-                      ))}
-                      {dayLeads.length > 2 && (
-                        <div className="text-xs text-muted-foreground pl-2 font-medium">
-                          +{dayLeads.length - 2} more
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Legend */}
-          <div className="px-6 py-4 border-t border-border bg-muted/30">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-6">
-                <div className="flex items-center">
-                  <div className="w-3 h-3 rounded-full bg-primary mr-2" />
-                  <span className="text-sm text-foreground font-medium">Wedding Date</span>
-                </div>
-                <div className="flex items-center">
-                  <div className="w-3 h-3 rounded-full bg-theme-green mr-2" />
-                  <span className="text-sm text-foreground font-medium">Lead Created</span>
-                </div>
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {leads.length} total leads • {leads.filter(l => l.status === 'booked').length} weddings booked
-              </div>
-            </div>
-          </div>
+          <EventList
+            events={selectedDateEvents}
+            selectedDate={selectedDate}
+            onEditEvent={handleEditEvent}
+            onDeleteEvent={handleDeleteEvent}
+            onCreateEvent={() => setShowEventForm(true)}
+          />
         </motion.div>
       </div>
 
-      <LeadDetailsSheet
-        lead={selectedLead}
-        isOpen={!!selectedLead}
-        onClose={() => setSelectedLead(null)}
-        isEditMode={false}
-        onLeadUpdate={loadLeads}
-      />
+      {/* Event Form Modal */}
+      {showEventForm && (
+        <EventForm
+          event={editingEvent}
+          selectedDate={selectedDate}
+          onSubmit={editingEvent ? handleUpdateEvent : handleCreateEvent}
+          onClose={() => {
+            setShowEventForm(false);
+            setEditingEvent(null);
+          }}
+        />
+      )}
+
+      {/* Block Date Form Modal */}
+      {showBlockDateForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 md:p-4">
+          <div className="bg-card border border-border rounded-xl w-full max-w-md">
+            <div className="p-4 md:p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base md:text-lg font-semibold">Block Unavailable Dates</h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowBlockDateForm(false)}
+                  className="h-8 w-8 p-0"
+                >
+                  ×
+                </Button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs md:text-sm font-medium text-muted-foreground">Start Date</label>
+                  <input
+                    type="date"
+                    className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+                
+                <div>
+                  <label className="text-xs md:text-sm font-medium text-muted-foreground">End Date</label>
+                  <input
+                    type="date"
+                    className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+                
+                <div>
+                  <label className="text-xs md:text-sm font-medium text-muted-foreground">Reason</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Holiday, Maintenance"
+                    className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+
+                <div className="flex space-x-2 pt-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowBlockDateForm(false)}
+                    className="flex-1 h-8 text-xs"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      // Handle block date submission
+                      setShowBlockDateForm(false);
+                    }}
+                    className="flex-1 h-8 text-xs"
+                  >
+                    Block Dates
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

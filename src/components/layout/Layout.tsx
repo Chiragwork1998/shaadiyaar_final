@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
-import { Bell, Search, Menu, X } from 'lucide-react';
+import { Bell, Search, Menu, X, LogOut, User } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { fetchPendingApprovals, supabase } from '../../lib/supabase';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -9,9 +12,56 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [pendingApprovalsCount, setPendingApprovalsCount] = useState(0);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  // Check if user is Super Admin (access_code 00-01)
+  const isSuperAdmin = user?.access_code === '00-01';
+
+  // Fetch pending approvals count for Super Admin
+  useEffect(() => {
+    if (!isSuperAdmin) {
+      setPendingApprovalsCount(0);
+      return;
+    }
+
+    const loadPendingApprovalsCount = async () => {
+      try {
+        const approvals = await fetchPendingApprovals();
+        const pendingCount = approvals.filter((approval: any) => approval.status === 'pending').length;
+        setPendingApprovalsCount(pendingCount);
+      } catch (error) {
+        console.error('Error loading pending approvals count:', error);
+      }
+    };
+
+    loadPendingApprovalsCount();
+
+    // Set up real-time subscription for pending approvals (only for Super Admin)
+    const channel = supabase
+      .channel('layout-pending-approvals')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pending_approvals' }, () => {
+        loadPendingApprovalsCount();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isSuperAdmin]);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
   };
 
   return (
@@ -87,27 +137,41 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
               {/* Right Section - Notifications & User */}
               <div className="flex items-center space-x-2 md:space-x-4">
-                {/* Notification Bell */}
+                {/* Notification Bell - Only for Super Admin */}
+                {isSuperAdmin && (
                 <Button 
                   variant="ghost" 
                   size="icon"
                   className="relative h-8 w-8 md:h-10 md:w-10"
+                    onClick={() => navigate('/approvals')}
                 >
                   <Bell className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
-                    3
+                    {pendingApprovalsCount > 0 && (
+                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+                        {pendingApprovalsCount}
                   </span>
+                    )}
                 </Button>
+                )}
 
-                {/* User Avatar */}
+                {/* User Avatar & Logout */}
                 <div className="flex items-center space-x-2 md:space-x-3">
                   <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <span className="text-blue-600 font-semibold text-sm md:text-base">A</span>
+                    <User className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
                   </div>
                   <div className="hidden lg:block">
-                    <p className="text-sm font-medium text-foreground">Admin User</p>
-                    <p className="text-xs text-muted-foreground">admin@shaadiyaar.com</p>
+                    <p className="text-sm font-medium text-foreground">{user?.name || 'Admin User'}</p>
+                    <p className="text-xs text-muted-foreground">{user?.email || 'admin@shaadiyaar.com'}</p>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleLogout}
+                    className="h-8 w-8 md:h-10 md:w-10 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    title="Logout"
+                  >
+                    <LogOut className="w-4 h-4 md:w-5 md:h-5" />
+                  </Button>
                 </div>
               </div>
             </div>
