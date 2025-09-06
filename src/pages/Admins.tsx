@@ -1,13 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Plus, 
   Search, 
-  Filter, 
-  MoreHorizontal, 
-  Edit, 
-  Trash2, 
-  UserPlus, 
   Mail, 
   Shield, 
   Clock, 
@@ -18,7 +13,9 @@ import {
   EyeOff,
   AlertTriangle,
   Users,
-  Activity
+  Activity,
+  Key,
+  Lock
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
@@ -27,8 +24,8 @@ import {
   revokeEmailAccount, 
   reactivateEmailAccount, 
   resetEmailPassword,
-  getAllEmailAccounts,
-  getEmailAccountsByAccessCode
+  setEmailPassword,
+  getAllEmailAccounts
 } from '../lib/supabase';
 import { AdminEmail } from '../types';
 import { getAccessLevelDisplayName } from '../utils/permissions';
@@ -45,17 +42,24 @@ interface EmailAccountWithAdmin extends AdminEmail {
 const Admins = () => {
   const { user, checkPermission } = useAuth();
   const [emailAccounts, setEmailAccounts] = useState<EmailAccountWithAdmin[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAccessCode, setSelectedAccessCode] = useState('all');
   const [showAddForm, setShowAddForm] = useState(false);
   const [showRevokeDialog, setShowRevokeDialog] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<EmailAccountWithAdmin | null>(null);
 
   // Add form state
   const [newEmail, setNewEmail] = useState('');
   const [newAccessCode, setNewAccessCode] = useState('02-03');
   const [addingAccount, setAddingAccount] = useState(false);
+
+  // Password change form state
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   // Check if user can manage admins
   const canManageAdmins = checkPermission('canManageAdmins');
@@ -68,14 +72,11 @@ const Admins = () => {
 
   const loadEmailAccounts = async () => {
     try {
-      setLoading(true);
       const accounts = await getAllEmailAccounts();
       setEmailAccounts(accounts);
     } catch (error) {
       console.error('Error loading email accounts:', error);
       toast.error('Failed to load email accounts');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -137,6 +138,49 @@ const Admins = () => {
       console.error('Error resetting password:', error);
       toast.error('Failed to reset password');
     }
+  };
+
+  const handleSetPassword = async () => {
+    if (!selectedAccount) return;
+
+    if (!newPassword || !confirmPassword) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters long');
+      return;
+    }
+
+    try {
+      setChangingPassword(true);
+      await setEmailPassword(selectedAccount.id, newPassword, user?.admin_id || '00-01');
+      
+      toast.success('Password set successfully');
+      setNewPassword('');
+      setConfirmPassword('');
+      setShowPasswordDialog(false);
+      setSelectedAccount(null);
+      loadEmailAccounts();
+    } catch (error) {
+      console.error('Error setting password:', error);
+      toast.error('Failed to set password');
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  const openPasswordDialog = (account: EmailAccountWithAdmin) => {
+    setSelectedAccount(account);
+    setNewPassword('');
+    setConfirmPassword('');
+    setShowPasswordDialog(true);
   };
 
   const filteredAccounts = emailAccounts.filter(account => {
@@ -362,40 +406,52 @@ const Admins = () => {
         </div>
       </div>
 
-                  <div className="flex items-center space-x-2 pt-2">
-                    {account.status === 'active' ? (
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedAccount(account);
-                          setShowRevokeDialog(true);
-                        }}
-                        className="flex-1"
-                      >
-                        <XCircle className="w-3 h-3 mr-1" />
-                        Revoke
-                      </Button>
-                    ) : (
+                  <div className="flex flex-col space-y-2 pt-2">
+                    <div className="flex items-center space-x-2">
+                      {account.status === 'active' ? (
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedAccount(account);
+                            setShowRevokeDialog(true);
+                          }}
+                          className="flex-1"
+                        >
+                          <XCircle className="w-3 h-3 mr-1" />
+                          Revoke
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleReactivateAccount(account)}
+                          className="flex-1"
+                        >
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          Reactivate
+                        </Button>
+                      )}
+                      
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleReactivateAccount(account)}
+                        onClick={() => handleResetPassword(account)}
                         className="flex-1"
                       >
-                        <CheckCircle className="w-3 h-3 mr-1" />
-                        Reactivate
+                        <RefreshCw className="w-3 h-3 mr-1" />
+                        Reset to Shared
                       </Button>
-                    )}
+                    </div>
                     
                     <Button
-                      variant="outline"
+                      variant="primary"
                       size="sm"
-                      onClick={() => handleResetPassword(account)}
-                      className="flex-1"
+                      onClick={() => openPasswordDialog(account)}
+                      className="w-full"
                     >
-                      <RefreshCw className="w-3 h-3 mr-1" />
-                      Reset Password
+                      <Key className="w-3 h-3 mr-1" />
+                      Set Custom Password
                     </Button>
                   </div>
                 </motion.div>
@@ -495,7 +551,16 @@ const Admins = () => {
                           onClick={() => handleResetPassword(account)}
                         >
                           <RefreshCw className="w-3 h-3 mr-1" />
-                          Reset Password
+                          Reset to Shared
+                        </Button>
+                        
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => openPasswordDialog(account)}
+                        >
+                          <Key className="w-3 h-3 mr-1" />
+                          Set Password
                         </Button>
                       </div>
                     </td>
@@ -606,6 +671,92 @@ const Admins = () => {
                 Revoke Access
               </Button>
               </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Set Password Dialog */}
+      {showPasswordDialog && selectedAccount && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-card rounded-lg p-4 md:p-6 w-full max-w-md"
+          >
+            <div className="flex items-center mb-4">
+              <Lock className="w-6 h-6 text-blue-500 mr-3" />
+              <h2 className="text-lg font-semibold">Set Custom Password</h2>
+            </div>
+            
+            <p className="text-muted-foreground mb-4 text-sm">
+              Set a custom password for <strong>{selectedAccount.email}</strong>. 
+              This will override the shared password for this account.
+            </p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">New Password</label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter new password"
+                    className="w-full px-3 py-2 pr-10 border border-input rounded-lg text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium mb-2">Confirm Password</label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                    className="w-full px-3 py-2 pr-10 border border-input rounded-lg text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 mt-6">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowPasswordDialog(false);
+                  setNewPassword('');
+                  setConfirmPassword('');
+                  setSelectedAccount(null);
+                }}
+                disabled={changingPassword}
+                className="w-full sm:w-auto"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSetPassword}
+                disabled={changingPassword || !newPassword || !confirmPassword}
+                className="w-full sm:w-auto"
+              >
+                {changingPassword ? 'Setting...' : 'Set Password'}
+              </Button>
+            </div>
           </motion.div>
         </div>
       )}

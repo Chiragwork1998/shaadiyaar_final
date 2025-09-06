@@ -5,35 +5,17 @@ import {
   Calendar,
   Package,
   Receipt,
-  Bot,
-  MessageSquare,
-  BarChart3,
   Settings,
   LogOut,
-  ArrowRight,
-  Building,
   CheckCircle,
   Clock,
-  Eye,
-  Edit,
   Plus,
   Target,
-  TrendingUp,
-  Star,
-  MapPin,
-  Phone,
-  Mail,
-  Shield,
-  Crown,
-  Zap,
   AlertCircle,
-  CheckCircle2,
-  XCircle,
   DollarSign,
-  User,
-  FileText,
   Trash2,
-  Loader2
+  Loader2,
+  CreditCard
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import {
@@ -52,12 +34,12 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { useNavigate } from 'react-router-dom';
-import { supabase, createPendingApproval } from '../lib/supabase';
-import { fetchLeads, fetchBookings, fetchEvents } from '../lib/supabase';
+import { supabase, createPendingApproval, createPartPayment } from '../lib/supabase';
+import { fetchBookings } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { getAccessLevelDisplayName } from '../utils/permissions';
 import { requiresApproval } from '../utils/permissions';
-import { generateSerialNumber, LEAD_TYPES } from '../utils/helpers';
+import { generateSequentialSerialNumber, LEAD_TYPES, MENU_OPTIONS, HALLS } from '../utils/helpers';
 import toast from 'react-hot-toast';
 
 interface Permission {
@@ -73,7 +55,7 @@ interface QuickAction {
   name: string;
   icon: React.ElementType;
   description: string;
-  action: 'navigate' | 'add-lead' | 'add-booking';
+  action: 'navigate' | 'add-lead' | 'add-booking' | 'add-part-payment';
   path?: string;
   color: string;
 }
@@ -98,11 +80,15 @@ const AddLeadForm: React.FC<{
   const [formData, setFormData] = useState({
     name: '',
     number: '',
-    location: '',
     wedding_date: '',
     numeric_budget: '',
     type_of_venue: '',
-    lead_type: 'Hot Lead'
+    lead_type: 'Hot Lead',
+    type_of_event: '',
+    quotation: '',
+    menu_option: '',
+    menu_quote: '',
+    updates: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -128,11 +114,15 @@ const AddLeadForm: React.FC<{
       const newLead = {
         name: formData.name,
         number: formData.number,
-        location: formData.location || '',
         wedding_date: formData.wedding_date,
         numeric_budget: parseFloat(formData.numeric_budget) || 0,
         type_of_venue: formData.type_of_venue || '',
         lead_type: formData.lead_type,
+        type_of_event: formData.type_of_event || '',
+        quotation: formData.quotation || '',
+        menu_option: formData.menu_option || '',
+        menu_quote: formData.menu_quote || '',
+        updates: formData.updates || '',
         status: 'new',
         lead_create_date: new Date().toISOString()
       };
@@ -154,11 +144,15 @@ const AddLeadForm: React.FC<{
       setFormData({
         name: '',
         number: '',
-        location: '',
         wedding_date: '',
         numeric_budget: '',
         type_of_venue: '',
-        lead_type: 'Hot Lead'
+        lead_type: 'Hot Lead',
+        type_of_event: '',
+        quotation: '',
+        menu_option: '',
+        menu_quote: '',
+        updates: ''
       });
     } catch (error) {
       console.error('Error adding lead:', error);
@@ -204,32 +198,20 @@ const AddLeadForm: React.FC<{
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="text-sm font-medium text-foreground">Location</label>
-              <input
-                type="text"
-                value={formData.location}
-                onChange={(e) => handleInputChange('location', e.target.value)}
-                className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
-                placeholder="Enter location"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground">Wedding Date *</label>
-              <input
-                type="date"
-                value={formData.wedding_date}
-                onChange={(e) => handleInputChange('wedding_date', e.target.value)}
-                className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
-                required
-              />
-            </div>
+          <div>
+            <label className="text-sm font-medium text-foreground">Date of Event *</label>
+            <input
+              type="date"
+              value={formData.wedding_date}
+              onChange={(e) => handleInputChange('wedding_date', e.target.value)}
+              className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+              required
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium text-foreground">Budget</label>
+              <label className="text-sm font-medium text-foreground">Party Budget</label>
               <input
                 type="number"
                 value={formData.numeric_budget}
@@ -264,6 +246,75 @@ const AddLeadForm: React.FC<{
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Additional Details */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-foreground">Additional Details</h3>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-foreground">Type of Event</label>
+                <input
+                  type="text"
+                  value={formData.type_of_event}
+                  onChange={(e) => handleInputChange('type_of_event', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  placeholder="e.g., Wedding, Birthday, Corporate Event"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground">Quotation</label>
+                <input
+                  type="text"
+                  value={formData.quotation}
+                  onChange={(e) => handleInputChange('quotation', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  placeholder="Enter quotation details"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-foreground">Menu Option</label>
+                <Select value={formData.menu_option} onValueChange={(value) => handleInputChange('menu_option', value)}>
+                  <SelectTrigger className="w-full mt-1">
+                    <SelectValue placeholder="Select menu option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MENU_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground">Menu Quote</label>
+                <input
+                  type="text"
+                  value={formData.menu_quote}
+                  onChange={(e) => handleInputChange('menu_quote', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  placeholder="Enter menu quote amount"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-foreground">Updates & Notes</label>
+              <textarea
+                value={formData.updates}
+                onChange={(e) => handleInputChange('updates', e.target.value)}
+                className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                placeholder="Add updates, notes, or follow-up details..."
+                rows={3}
+              />
+            </div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-2 pt-4">
@@ -315,11 +366,12 @@ const AddBookingForm: React.FC<{
     client_name: '',
     client_address: '',
     contact_number: '',
-    date_of_birth: '',
+    booking_date: new Date().toISOString().split('T')[0],
     
     // Event Details
     date_of_function: '',
     occasion: 'Wedding',
+    custom_occasion_details: '',
     hall: 'Main Hall',
     meal_type: 'Dinner',
     timings_from: '',
@@ -327,12 +379,13 @@ const AddBookingForm: React.FC<{
     pax: '',
     
     // Menu & Preferences
-    menu: 'Veg Menu',
+    menu: 'Veg Silver',
     onion_preference: 'Yes',
     garlic_preference: 'Yes',
     
     // Services
     flower_decoration: 'Basic',
+    custom_flower_details: '',
     dj_service: false,
     liquor_service: false,
     theme: '',
@@ -353,6 +406,32 @@ const AddBookingForm: React.FC<{
     status: 'pending'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Auto-generate serial number and set booking date when form opens
+  useEffect(() => {
+    if (isOpen) {
+      const generateSerial = async () => {
+        try {
+          const nextSerial = await generateSequentialSerialNumber();
+          setFormData(prev => ({ 
+            ...prev, 
+            serial_no: nextSerial,
+            booking_date: new Date().toISOString().split('T')[0]
+          }));
+        } catch (error) {
+          console.error('Error generating serial number:', error);
+          // Fallback to random number
+          const randomNum = Math.floor(Math.random() * 999) + 1;
+          setFormData(prev => ({ 
+            ...prev, 
+            serial_no: `O${randomNum}`,
+            booking_date: new Date().toISOString().split('T')[0]
+          }));
+        }
+      };
+      generateSerial();
+    }
+  }, [isOpen]);
 
   const handleInputChange = (field: string, value: string | boolean | number) => {
     setFormData(prev => {
@@ -396,15 +475,16 @@ const AddBookingForm: React.FC<{
       const status = user && requiresApproval(user.access_code as any) ? 'pending_approval' : 'confirmed';
       
       const bookingData = {
-        serial_no: formData.serial_no || generateSerialNumber(),
+        serial_no: formData.serial_no,
         unit: formData.unit,
         client_name: formData.client_name,
         client_address: formData.client_address,
         contact_number: formData.contact_number,
-        date_of_birth: formData.date_of_birth,
+        booking_date: formData.booking_date,
         event_date: formData.date_of_function, // Map to old field for compatibility
         date_of_function: formData.date_of_function,
         occasion: formData.occasion,
+        custom_occasion_details: formData.custom_occasion_details,
         hall: formData.hall,
         meal_type: formData.meal_type,
         timings_from: formData.timings_from,
@@ -414,6 +494,7 @@ const AddBookingForm: React.FC<{
         onion_preference: formData.onion_preference,
         garlic_preference: formData.garlic_preference,
         flower_decoration: formData.flower_decoration,
+        custom_flower_details: formData.custom_flower_details,
         dj_service: formData.dj_service,
         liquor_service: formData.liquor_service,
         theme: formData.theme,
@@ -425,8 +506,7 @@ const AddBookingForm: React.FC<{
         balance_amount: parseFloat(formData.balance_amount) || 0,
         btr: formData.btr,
         remarks: formData.remarks,
-        status: status,
-        booking_date: new Date().toISOString().split('T')[0]
+        status: status
       };
 
       // Check if user requires approval
@@ -445,18 +525,20 @@ const AddBookingForm: React.FC<{
           client_name: '',
           client_address: '',
           contact_number: '',
-          date_of_birth: '',
+          booking_date: new Date().toISOString().split('T')[0],
           date_of_function: '',
           occasion: 'Wedding',
-          hall: 'Main Hall',
+          custom_occasion_details: '',
+          hall: 'Ground',
           meal_type: 'Dinner',
           timings_from: '',
           timings_to: '',
           pax: '',
-          menu: 'Veg Menu',
+          menu: 'Veg Silver',
           onion_preference: 'Yes',
           garlic_preference: 'Yes',
           flower_decoration: 'Basic',
+          custom_flower_details: '',
           dj_service: false,
           liquor_service: false,
           theme: '',
@@ -492,18 +574,20 @@ const AddBookingForm: React.FC<{
         client_name: '',
         client_address: '',
         contact_number: '',
-        date_of_birth: '',
+        booking_date: new Date().toISOString().split('T')[0],
         date_of_function: '',
         occasion: 'Wedding',
-        hall: 'Main Hall',
+        custom_occasion_details: '',
+        hall: 'Ground',
         meal_type: 'Dinner',
         timings_from: '',
         timings_to: '',
         pax: '',
-        menu: 'Veg Menu',
+        menu: 'Veg Silver',
         onion_preference: 'Yes',
         garlic_preference: 'Yes',
         flower_decoration: 'Basic',
+        custom_flower_details: '',
         dj_service: false,
         liquor_service: false,
         theme: '',
@@ -545,9 +629,9 @@ const AddBookingForm: React.FC<{
               <input
                 type="text"
                 value={formData.serial_no}
-                onChange={(e) => handleInputChange('serial_no', e.target.value)}
-                className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
-                placeholder="O1, O2, etc."
+                readOnly
+                className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm bg-muted cursor-not-allowed"
+                placeholder="Auto-generated"
               />
             </div>
             <div>
@@ -612,12 +696,13 @@ const AddBookingForm: React.FC<{
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-foreground">Date of Birth</label>
+                <label className="text-sm font-medium text-foreground">Date of Booking</label>
                 <input
                   type="date"
-                  value={formData.date_of_birth}
-                  onChange={(e) => handleInputChange('date_of_birth', e.target.value)}
-                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  value={formData.booking_date}
+                  readOnly
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm bg-gray-50 text-gray-600 cursor-not-allowed"
+                  title="Booking date is automatically set to today's date"
                 />
               </div>
             </div>
@@ -643,6 +728,18 @@ const AddBookingForm: React.FC<{
                     <SelectItem value="Other">Other</SelectItem>
                   </SelectContent>
                 </Select>
+                {formData.occasion === 'Other' && (
+                  <div className="mt-2">
+                    <label className="text-sm font-medium text-foreground">Custom Occasion Details</label>
+                    <input
+                      type="text"
+                      value={formData.custom_occasion_details}
+                      onChange={(e) => handleInputChange('custom_occasion_details', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                      placeholder="Enter custom occasion details"
+                    />
+                  </div>
+                )}
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground">Hall</label>
@@ -651,11 +748,11 @@ const AddBookingForm: React.FC<{
                     <SelectValue placeholder="Select hall" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Main Hall">Main Hall</SelectItem>
-                    <SelectItem value="VIP Hall">VIP Hall</SelectItem>
-                    <SelectItem value="Garden Area">Garden Area</SelectItem>
-                    <SelectItem value="Outdoor Area">Outdoor Area</SelectItem>
-                    <SelectItem value="Private Room">Private Room</SelectItem>
+                    {HALLS.map((hall) => (
+                      <SelectItem key={hall.value} value={hall.value}>
+                        {hall.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -715,11 +812,12 @@ const AddBookingForm: React.FC<{
                     <SelectValue placeholder="Select menu" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Veg Menu">Veg Menu</SelectItem>
-                    <SelectItem value="Non-Veg Menu">Non-Veg Menu</SelectItem>
-                    <SelectItem value="Mixed Menu">Mixed Menu</SelectItem>
-                    <SelectItem value="Premium Veg">Premium Veg</SelectItem>
-                    <SelectItem value="Premium Non-Veg">Premium Non-Veg</SelectItem>
+                    <SelectItem value="Veg Silver">Veg Silver</SelectItem>
+                    <SelectItem value="Non-Veg Silver">Non-Veg Silver</SelectItem>
+                    <SelectItem value="Veg Gold">Veg Gold</SelectItem>
+                    <SelectItem value="Non-Veg Gold">Non-Veg Gold</SelectItem>
+                    <SelectItem value="Veg Platinum">Veg Platinum</SelectItem>
+                    <SelectItem value="Non-Veg Platinum">Non-Veg Platinum</SelectItem>
                     <SelectItem value="Custom Menu">Custom Menu</SelectItem>
                   </SelectContent>
                 </Select>
@@ -771,6 +869,18 @@ const AddBookingForm: React.FC<{
                     <SelectItem value="None">None</SelectItem>
                   </SelectContent>
                 </Select>
+                {formData.flower_decoration === 'Custom' && (
+                  <div className="mt-2">
+                    <label className="text-sm font-medium text-foreground">Custom Flower Details</label>
+                    <input
+                      type="text"
+                      value={formData.custom_flower_details}
+                      onChange={(e) => handleInputChange('custom_flower_details', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                      placeholder="Enter custom flower decoration details"
+                    />
+                  </div>
+                )}
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground">Theme</label>
@@ -937,12 +1047,213 @@ const AddBookingForm: React.FC<{
   );
 };
 
+// Add Part Payment Form Component
+const AddPartPaymentForm: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  onPaymentAdded: () => void;
+  bookings: any[];
+}> = ({ isOpen, onClose, onPaymentAdded, bookings }) => {
+  const [formData, setFormData] = useState({
+    booking_id: '',
+    client_name: '',
+    amount: '',
+    payment_date: new Date().toISOString().split('T')[0],
+    description: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { user } = useAuth();
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // If booking_id is selected, automatically populate client_name
+    if (field === 'booking_id' && value) {
+      const selectedBooking = bookings.find(booking => booking.booking_id.toString() === value);
+      if (selectedBooking) {
+        setFormData(prev => ({ ...prev, client_name: selectedBooking.client_name }));
+      }
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.booking_id || !formData.amount || !formData.payment_date) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      // Get the selected booking to ensure we have the correct client_name
+      const selectedBooking = bookings.find(booking => booking.booking_id.toString() === formData.booking_id);
+      
+      const paymentData = {
+        booking_id: formData.booking_id,
+        client_name: selectedBooking?.client_name || formData.client_name,
+        amount: parseFloat(formData.amount) || 0,
+        payment_date: formData.payment_date,
+        description: formData.description
+      };
+
+      // Check if user requires approval
+      if (user && requiresApproval(user.access_code as any)) {
+        // Submit to pending approvals
+        await createPendingApproval({
+          admin_id: user.admin_id,
+          action_type: 'part_payment',
+          action_data: paymentData,
+          status: 'pending'
+        });
+
+        toast.success('Part payment submitted for approval!');
+      } else {
+        // Direct submission for admin users
+        await createPartPayment(paymentData);
+        toast.success('Part payment added successfully!');
+      }
+
+      onPaymentAdded();
+      onClose();
+      
+      // Reset form
+      setFormData({
+        booking_id: '',
+        client_name: '',
+        amount: '',
+        payment_date: new Date().toISOString().split('T')[0],
+        description: ''
+      });
+    } catch (error) {
+      console.error('Error adding part payment:', error);
+      toast.error('Failed to add part payment');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-lg font-semibold">Add Part Payment</DialogTitle>
+          <DialogDescription>
+            Record a part payment for an existing booking
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium text-foreground">Booking *</label>
+              <Select value={formData.booking_id} onValueChange={(value) => handleInputChange('booking_id', value)}>
+                <SelectTrigger className="w-full mt-1">
+                  <SelectValue placeholder="Select a booking" />
+                </SelectTrigger>
+                <SelectContent>
+                  {bookings.map((booking) => (
+                    <SelectItem key={booking.booking_id} value={booking.booking_id.toString()}>
+                      {booking.client_name} - {booking.booking_id}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground">Client Name *</label>
+              <input
+                type="text"
+                value={formData.client_name}
+                onChange={(e) => handleInputChange('client_name', e.target.value)}
+                className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                placeholder="Client name"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium text-foreground">Amount *</label>
+              <input
+                type="number"
+                value={formData.amount}
+                onChange={(e) => handleInputChange('amount', e.target.value)}
+                className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                placeholder="Enter payment amount"
+                required
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground">Payment Date *</label>
+              <input
+                type="date"
+                value={formData.payment_date}
+                onChange={(e) => handleInputChange('payment_date', e.target.value)}
+                className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-foreground">Description</label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => handleInputChange('description', e.target.value)}
+              className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+              placeholder="Payment description (optional)"
+              rows={3}
+            />
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="w-full sm:w-auto"
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              className="w-full sm:w-auto"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                <>
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Add Payment
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, userEmail, logout } = useAuth();
   const [loading, setLoading] = useState(true);
   const [showAddLeadForm, setShowAddLeadForm] = useState(false);
   const [showAddBookingForm, setShowAddBookingForm] = useState(false);
+  const [showAddPartPaymentForm, setShowAddPartPaymentForm] = useState(false);
   const [showKillConfirmation, setShowKillConfirmation] = useState(false);
   const [isKilling, setIsKilling] = useState(false);
   const [stats, setStats] = useState<DashboardStats>({
@@ -955,9 +1266,7 @@ const Dashboard = () => {
     eventGrowth: 0,
     taskGrowth: 0
   });
-  const [leads, setLeads] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
-  const [events, setEvents] = useState<any[]>([]);
 
   // Fetch real-time data
   useEffect(() => {
@@ -965,23 +1274,16 @@ const Dashboard = () => {
       try {
         setLoading(true);
         
-        // Fetch all data in parallel
-        const [leadsData, bookingsData, eventsData] = await Promise.all([
-          fetchLeads(),
-          fetchBookings(),
-          fetchEvents()
-        ]);
-
-        setLeads(leadsData);
+        // Fetch bookings data
+        const bookingsData = await fetchBookings();
         setBookings(bookingsData);
-        setEvents(eventsData);
 
         // Calculate stats
         const calculatedStats = {
-          totalLeads: leadsData.length,
+          totalLeads: 0, // Mock data
           activeBookings: bookingsData.filter((b: any) => b.status === 'confirmed').length,
-          upcomingEvents: eventsData.filter((e: any) => new Date(e.start_date) > new Date()).length,
-          pendingTasks: leadsData.filter((l: any) => l.status === 'new').length,
+          upcomingEvents: 0, // Mock data
+          pendingTasks: 0, // Mock data
           leadGrowth: 12, // Mock data
           bookingGrowth: 8,
           eventGrowth: 15,
@@ -1016,6 +1318,9 @@ const Dashboard = () => {
         break;
       case 'add-booking':
         setShowAddBookingForm(true);
+        break;
+      case 'add-part-payment':
+        setShowAddPartPaymentForm(true);
         break;
     }
   };
@@ -1128,6 +1433,14 @@ const Dashboard = () => {
     },
     {
       id: '3',
+      name: 'Add Payment',
+      icon: CreditCard,
+      description: 'Record part payment',
+      action: 'add-part-payment',
+      color: 'bg-emerald-500'
+    },
+    {
+      id: '4',
       name: 'View Calendar',
       icon: Calendar,
       description: 'Check calendar events',
@@ -1136,7 +1449,7 @@ const Dashboard = () => {
       color: 'bg-purple-500'
     },
     {
-      id: '4',
+      id: '5',
       name: 'Update Inventory',
       icon: Package,
       description: 'Manage vendor inventory',
@@ -1415,6 +1728,14 @@ const Dashboard = () => {
           isOpen={showAddBookingForm}
           onClose={() => setShowAddBookingForm(false)}
           onBookingAdded={handleDataRefresh}
+        />
+
+        {/* Add Part Payment Form */}
+        <AddPartPaymentForm
+          isOpen={showAddPartPaymentForm}
+          onClose={() => setShowAddPartPaymentForm(false)}
+          onPaymentAdded={handleDataRefresh}
+          bookings={bookings}
         />
 
         {/* Kill Data Confirmation Dialog */}

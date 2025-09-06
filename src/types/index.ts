@@ -174,6 +174,7 @@ export interface Booking {
   // Event Details
   date_of_function: string; // D.O.F.
   occasion: string; // Wedding, Birthday, etc.
+  custom_occasion_details?: string;
   hall: string; // Hall selection
   meal_type: string; // Lunch / Dinner
   timings_from: string;
@@ -187,6 +188,7 @@ export interface Booking {
   
   // Services
   flower_decoration: string;
+  custom_flower_details?: string;
   dj_service: boolean;
   liquor_service: boolean;
   theme?: string;

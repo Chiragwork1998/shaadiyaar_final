@@ -13,7 +13,7 @@ import {
 import { Button } from '../ui/Button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { LEAD_TYPES } from '../../utils/helpers';
+import { LEAD_TYPES, MENU_OPTIONS } from '../../utils/helpers';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'react-hot-toast';
 
@@ -31,11 +31,15 @@ const AddLeadForm: React.FC<AddLeadFormProps> = ({
   const [formData, setFormData] = useState({
     name: '',
     number: '',
-    location: '',
     wedding_date: '',
     numeric_budget: '',
     type_of_venue: '',
-    lead_type: 'New Lead'
+    lead_type: 'New Lead',
+    type_of_event: '',
+    quotation: '',
+    menu_option: '',
+    menu_quote: '',
+    updates: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -61,11 +65,15 @@ const AddLeadForm: React.FC<AddLeadFormProps> = ({
       const newLead = {
         name: formData.name,
         number: formData.number,
-        location: formData.location || '',
         wedding_date: formData.wedding_date,
         numeric_budget: parseFloat(formData.numeric_budget) || 0,
         type_of_venue: formData.type_of_venue || '',
         lead_type: formData.lead_type,
+        type_of_event: formData.type_of_event || '',
+        quotation: formData.quotation || '',
+        menu_option: formData.menu_option || '',
+        menu_quote: formData.menu_quote || '',
+        updates: formData.updates || '',
         status: 'new',
         lead_create_date: new Date().toISOString()
       };
@@ -87,11 +95,15 @@ const AddLeadForm: React.FC<AddLeadFormProps> = ({
       setFormData({
         name: '',
         number: '',
-        location: '',
         wedding_date: '',
         numeric_budget: '',
         type_of_venue: '',
-        lead_type: 'New Lead'
+        lead_type: 'New Lead',
+        type_of_event: '',
+        quotation: '',
+        menu_option: '',
+        menu_quote: '',
+        updates: ''
       });
     } catch (error) {
       console.error('Error adding lead:', error);
@@ -162,19 +174,6 @@ const AddLeadForm: React.FC<AddLeadFormProps> = ({
               </div>
             </div>
 
-            <div>
-              <label className="text-sm font-medium text-foreground flex items-center">
-                <MapPin className="w-4 h-4 mr-2" />
-                Location
-              </label>
-              <input
-                type="text"
-                value={formData.location}
-                onChange={(e) => handleInputChange('location', e.target.value)}
-                className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
-                placeholder="Enter location"
-              />
-            </div>
           </motion.div>
 
           {/* Wedding Details */}
@@ -185,15 +184,15 @@ const AddLeadForm: React.FC<AddLeadFormProps> = ({
             className="space-y-4"
           >
             <h3 className="text-lg font-semibold text-foreground flex items-center">
-              <Calendar className="w-5 h-5 mr-2" />
-              Wedding Details
+                <Calendar className="w-5 h-5 mr-2" />
+                Event Details
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-foreground flex items-center">
                   <Calendar className="w-4 h-4 mr-2" />
-                  Wedding Date *
+                  Date of Event *
                 </label>
                 <input
                   type="date"
@@ -207,7 +206,7 @@ const AddLeadForm: React.FC<AddLeadFormProps> = ({
               <div>
                 <label className="text-sm font-medium text-foreground flex items-center">
                   <DollarSign className="w-4 h-4 mr-2" />
-                  Budget
+                  Party Budget
                 </label>
                 <input
                   type="number"
@@ -250,6 +249,93 @@ const AddLeadForm: React.FC<AddLeadFormProps> = ({
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+          </motion.div>
+
+          {/* Additional Details */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="space-y-4"
+          >
+            <h3 className="text-lg font-semibold text-foreground flex items-center">
+              <Calendar className="w-5 h-5 mr-2" />
+              Additional Details
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Type of Event
+                </label>
+                <input
+                  type="text"
+                  value={formData.type_of_event}
+                  onChange={(e) => handleInputChange('type_of_event', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  placeholder="e.g., Wedding, Birthday, Corporate Event"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Quotation
+                </label>
+                <input
+                  type="text"
+                  value={formData.quotation}
+                  onChange={(e) => handleInputChange('quotation', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  placeholder="Enter quotation details"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Menu Option
+                </label>
+                <Select value={formData.menu_option} onValueChange={(value) => handleInputChange('menu_option', value)}>
+                  <SelectTrigger className="w-full mt-1">
+                    <SelectValue placeholder="Select menu option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MENU_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Menu Quote
+                </label>
+                <input
+                  type="text"
+                  value={formData.menu_quote}
+                  onChange={(e) => handleInputChange('menu_quote', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  placeholder="Enter menu quote amount"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-foreground">
+                Updates & Notes
+              </label>
+              <textarea
+                value={formData.updates}
+                onChange={(e) => handleInputChange('updates', e.target.value)}
+                className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                placeholder="Add updates, notes, or follow-up details..."
+                rows={3}
+              />
             </div>
           </motion.div>
 

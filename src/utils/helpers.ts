@@ -106,11 +106,10 @@ export const OCCASIONS = [
 ] as const;
 
 export const HALLS = [
-  { value: 'Main Hall', label: 'Main Hall' },
-  { value: 'VIP Hall', label: 'VIP Hall' },
-  { value: 'Garden Area', label: 'Garden Area' },
-  { value: 'Outdoor Area', label: 'Outdoor Area' },
-  { value: 'Private Room', label: 'Private Room' }
+  { value: 'Ground', label: 'Ground' },
+  { value: 'First', label: 'First' },
+  { value: 'Second', label: 'Second' },
+  { value: 'Terrace', label: 'Terrace' }
 ] as const;
 
 export const MEAL_TYPES = [
@@ -120,11 +119,12 @@ export const MEAL_TYPES = [
 ] as const;
 
 export const MENU_OPTIONS = [
-  { value: 'Veg Menu', label: 'Veg Menu' },
-  { value: 'Non-Veg Menu', label: 'Non-Veg Menu' },
-  { value: 'Mixed Menu', label: 'Mixed Menu' },
-  { value: 'Premium Veg', label: 'Premium Veg' },
-  { value: 'Premium Non-Veg', label: 'Premium Non-Veg' },
+  { value: 'Veg Silver', label: 'Veg Silver' },
+  { value: 'Non-Veg Silver', label: 'Non-Veg Silver' },
+  { value: 'Veg Gold', label: 'Veg Gold' },
+  { value: 'Non-Veg Gold', label: 'Non-Veg Gold' },
+  { value: 'Veg Platinum', label: 'Veg Platinum' },
+  { value: 'Non-Veg Platinum', label: 'Non-Veg Platinum' },
   { value: 'Custom Menu', label: 'Custom Menu' }
 ] as const;
 

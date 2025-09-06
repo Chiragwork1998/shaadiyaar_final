@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
-import { Share2, Save } from 'lucide-react';
+import { Share2, Save, Phone, Calendar, DollarSign, Building, ChevronUp, ChevronDown, Star, User, X } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
   SheetTitle,
 } from "../ui/sheet";
 import { Button } from "../ui/Button";
-import { formatDate, formatCurrency, getLeadTypeStyle, LEAD_TYPES, formatIndianCurrency } from '../../utils/helpers';
+import { formatDate, getLeadTypeStyle, LEAD_TYPES, formatIndianCurrency, getStatusText, getLeadStatusTriggerStyle, getStatusDotColor } from '../../utils/helpers';
 import { Lead } from '../../types';
 import { supabase } from '../../lib/supabase';
 import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface LeadDetailsSheetProps {
   lead: Lead | null;
@@ -29,6 +29,7 @@ const LeadDetailsSheet: React.FC<LeadDetailsSheetProps> = ({
 }) => {
   const [editedLead, setEditedLead] = useState<Partial<Lead>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['contact', 'wedding']));
 
   React.useEffect(() => {
     if (lead) {
@@ -39,7 +40,7 @@ const LeadDetailsSheet: React.FC<LeadDetailsSheetProps> = ({
   if (!lead) return null;
 
   const shareOnWhatsApp = () => {
-    const text = `New Lead Details:\nName: ${lead.name}\nBudget: ${formatIndianCurrency(lead.numeric_budget)}\nLocation: ${lead.location}\nWedding Date: ${formatDate(lead.wedding_date)}`;
+    const text = `🎉 Lead Details - ${lead.name}\n\n💰 Budget: ${formatIndianCurrency(lead.numeric_budget)}\n💒 Wedding Date: ${formatDate(lead.wedding_date)}\n📞 Contact: ${lead.number}\n⭐ Type: ${lead.lead_type}\n\n📱 Shared via Shaadiyaar Admin`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
   };
 
@@ -55,11 +56,9 @@ const LeadDetailsSheet: React.FC<LeadDetailsSheetProps> = ({
 
     setIsSaving(true);
     try {
-      // Only update specific fields that are safe to update
       const updateData = {
         name: editedLead.name,
         number: editedLead.number,
-        location: editedLead.location,
         wedding_date: editedLead.wedding_date,
         numeric_budget: editedLead.numeric_budget,
         type_of_venue: editedLead.type_of_venue,
@@ -67,7 +66,6 @@ const LeadDetailsSheet: React.FC<LeadDetailsSheetProps> = ({
         status: editedLead.status
       };
 
-      // Remove undefined values
       const cleanUpdateData = Object.fromEntries(
         Object.entries(updateData).filter(([_, value]) => value !== undefined)
       );
@@ -93,17 +91,33 @@ const LeadDetailsSheet: React.FC<LeadDetailsSheetProps> = ({
     }
   };
 
-  const renderField = (label: string, field: keyof Lead, type: 'text' | 'number' | 'date' | 'select' = 'text') => {
-    const value = editedLead[field] || '';
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(section)) {
+        newSet.delete(section);
+      } else {
+        newSet.add(section);
+      }
+      return newSet;
+    });
+  };
+
+  const renderField = (label: string, field: keyof Lead, type: 'text' | 'number' | 'date' | 'select' = 'text', icon?: React.ReactNode) => {
+    const value = editedLead[field] || lead[field] || '';
 
     if (!isEditMode) {
       return (
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">{label}</span>
-          <span className="text-foreground font-medium">
+        <div className="flex items-center justify-between py-3 px-4 bg-muted/30 rounded-lg">
+          <div className="flex items-center space-x-3">
+            {icon && <div className="text-muted-foreground">{icon}</div>}
+            <span className="text-sm font-medium text-muted-foreground">{label}</span>
+          </div>
+          <span className="text-sm font-semibold text-foreground text-right max-w-[60%] break-words">
             {field === 'numeric_budget' ? formatIndianCurrency(value as number) : 
              field === 'wedding_date' ? formatDate(value as string) : 
-             value}
+             field === 'lead_create_date' ? formatDate(value as string) :
+             value || 'Not specified'}
           </span>
         </div>
       );
@@ -111,12 +125,15 @@ const LeadDetailsSheet: React.FC<LeadDetailsSheetProps> = ({
 
     if (type === 'select' && field === 'lead_type') {
       return (
-        <div className="flex justify-between text-sm items-center">
-          <span className="text-muted-foreground">{label}</span>
+        <div className="flex items-center justify-between py-3 px-4 bg-muted/30 rounded-lg">
+          <div className="flex items-center space-x-3">
+            {icon && <div className="text-muted-foreground">{icon}</div>}
+            <span className="text-sm font-medium text-muted-foreground">{label}</span>
+          </div>
           <select
             value={value}
             onChange={(e) => handleInputChange(field, e.target.value)}
-            className="text-sm border border-border rounded-md px-2 py-1 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            className="text-sm border border-border rounded-md px-2 py-1 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary max-w-[60%]"
           >
             {LEAD_TYPES.map(type => (
               <option key={type.value} value={type.value}>{type.label}</option>
@@ -127,53 +144,97 @@ const LeadDetailsSheet: React.FC<LeadDetailsSheetProps> = ({
     }
 
     return (
-      <div className="flex justify-between text-sm items-center">
-        <span className="text-muted-foreground">{label}</span>
+      <div className="flex items-center justify-between py-3 px-4 bg-muted/30 rounded-lg">
+        <div className="flex items-center space-x-3">
+          {icon && <div className="text-muted-foreground">{icon}</div>}
+          <span className="text-sm font-medium text-muted-foreground">{label}</span>
+        </div>
         <input
           type={type}
           value={value}
           onChange={(e) => handleInputChange(field, type === 'number' ? Number(e.target.value) : e.target.value)}
-          className="text-sm border border-border rounded-md px-2 py-1 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          className="text-sm border border-border rounded-md px-2 py-1 bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary max-w-[60%]"
         />
+      </div>
+    );
+  };
+
+  const renderSection = (title: string, sectionKey: string, children: React.ReactNode) => {
+    const isExpanded = expandedSections.has(sectionKey);
+    
+    return (
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
+        <button
+          onClick={() => toggleSection(sectionKey)}
+          className="w-full flex items-center justify-between p-4 bg-muted/20 hover:bg-muted/30 transition-colors"
+        >
+          <h3 className="text-base font-semibold text-foreground">{title}</h3>
+          {isExpanded ? (
+            <ChevronUp className="w-5 h-5 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="w-5 h-5 text-muted-foreground" />
+          )}
+        </button>
+        <AnimatePresence>
+          {isExpanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <div className="p-4 space-y-3">
+                {children}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     );
   };
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-[500px] sm:w-[600px] bg-card overflow-y-auto">
-        <SheetHeader className="pb-6 border-b border-border">
-          <div className="flex flex-col space-y-4 sm:flex-row sm:items-start sm:justify-between sm:space-y-0">
-            <div className="flex items-center space-x-3 min-w-0 flex-1">
-              <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-primary font-medium text-lg">
-                  {lead.name.charAt(0)}
-                </span>
+      <SheetContent className="w-full sm:w-[400px] md:w-[500px] bg-card overflow-y-auto p-0">
+        {/* Header */}
+        <div className="sticky top-0 bg-card border-b border-border pt-8 pb-4 px-4 z-10 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center space-x-3 flex-1 min-w-0">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground rounded-full flex items-center justify-center font-semibold text-lg shadow-sm flex-shrink-0">
+                {lead.name.charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
-                <SheetTitle className="text-xl font-serif text-foreground">
+                <SheetTitle className="text-lg font-semibold text-foreground mb-2">
                   {isEditMode ? (
                     <input
                       type="text"
                       value={editedLead.name || ''}
                       onChange={(e) => handleInputChange('name', e.target.value)}
-                      className="text-xl font-serif border-b border-border bg-transparent text-foreground focus:outline-none focus:border-primary w-full max-w-[300px]"
+                      className="text-lg font-semibold border-b border-border bg-transparent text-foreground focus:outline-none focus:border-primary w-full"
                     />
                   ) : lead.name}
                 </SheetTitle>
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-1 ${getLeadTypeStyle(lead.lead_type)}`}>
-                  {lead.lead_type}
-                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getLeadTypeStyle(lead.lead_type)}`}>
+                    <Star className="w-3 h-3 mr-1" />
+                    {lead.lead_type}
+                  </span>
+                  <div className={`flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${getLeadStatusTriggerStyle(lead.status)}`}>
+                    <div className={`w-2 h-2 rounded-full mr-1.5 ${getStatusDotColor(lead.status)}`}></div>
+                    {getStatusText(lead.status)}
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="flex space-x-2 flex-shrink-0 mt-2 sm:mt-0">
+            <div className="flex items-center space-x-2 flex-shrink-0">
               {isEditMode ? (
                 <Button
-                  variant="outline"
+                  variant="primary"
                   size="sm"
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="whitespace-nowrap text-sm px-3 py-2"
+                  className="text-sm px-3 py-2"
                 >
                   <Save className="w-4 h-4 mr-2" />
                   {isSaving ? 'Saving...' : 'Save'}
@@ -182,66 +243,88 @@ const LeadDetailsSheet: React.FC<LeadDetailsSheetProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-green-600 hover:text-green-700 hover:bg-green-50 whitespace-nowrap text-sm px-3 py-2"
+                  className="text-green-600 hover:text-green-700 hover:bg-green-50 text-sm px-3 py-2"
                   onClick={shareOnWhatsApp}
                 >
                   <Share2 className="w-4 h-4 mr-2" />
                   Share
                 </Button>
               )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+                className="text-muted-foreground hover:text-foreground hover:bg-muted p-2"
+              >
+                <X className="w-5 h-5" />
+              </Button>
             </div>
           </div>
-        </SheetHeader>
+        </div>
 
-        <div className="mt-6 space-y-6">
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground">Contact Details</h3>
-            <div className="mt-2 space-y-2">
-              {renderField('Phone Number', 'number')}
-              {renderField('Location', 'location')}
-            </div>
-          </div>
+        {/* Content */}
+        <div className="p-4 space-y-4">
+          {/* Contact Details */}
+          {renderSection(
+            'Contact Information',
+            'contact',
+            <>
+              {renderField('Phone Number', 'number', 'text', <Phone className="w-4 h-4" />)}
+            </>
+          )}
 
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground">Wedding Details</h3>
-            <div className="mt-2 space-y-2">
-              {renderField('Wedding Date', 'wedding_date', 'date')}
-              {renderField('Budget', 'numeric_budget', 'number')}
-              {renderField('Venue Type', 'type_of_venue')}
-              {renderField('Lead Type', 'lead_type', 'select')}
-            </div>
-          </div>
+          {/* Wedding Details */}
+          {renderSection(
+            'Wedding Details',
+            'wedding',
+            <>
+              {renderField('Wedding Date', 'wedding_date', 'date', <Calendar className="w-4 h-4" />)}
+              {renderField('Budget', 'numeric_budget', 'number', <DollarSign className="w-4 h-4" />)}
+              {renderField('Venue Type', 'type_of_venue', 'text', <Building className="w-4 h-4" />)}
+              {renderField('Lead Type', 'lead_type', 'select', <Star className="w-4 h-4" />)}
+            </>
+          )}
 
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground">Timeline</h3>
-            <div className="mt-4 relative border-l-2 border-border pl-4 space-y-6">
-              <div className="relative">
-                <div className="absolute -left-[21px] mt-1.5 w-4 h-4 bg-primary rounded-full" />
+          {/* Timeline */}
+          {renderSection(
+            'Timeline',
+            'timeline',
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3 p-3 bg-muted/30 rounded-lg">
+                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                  <User className="w-4 h-4 text-primary-foreground" />
+                </div>
                 <div>
                   <p className="text-sm font-medium text-foreground">Lead Created</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{formatDate(lead.lead_create_date)}</p>
+                  <p className="text-xs text-muted-foreground">{formatDate(lead.lead_create_date)}</p>
                 </div>
               </div>
-
-              <div className="relative">
-                <div className="absolute -left-[21px] mt-1.5 w-4 h-4 bg-muted rounded-full" />
+              
+              <div className="flex items-center space-x-3 p-3 bg-muted/30 rounded-lg">
+                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                  <Calendar className="w-4 h-4 text-white" />
+                </div>
                 <div>
                   <p className="text-sm font-medium text-foreground">Wedding Day</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{formatDate(lead.wedding_date)}</p>
+                  <p className="text-xs text-muted-foreground">{formatDate(lead.wedding_date)}</p>
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground">Notes</h3>
-            <textarea
-              className="mt-2 w-full rounded-lg border border-border bg-background text-foreground text-sm p-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-              rows={4}
-              placeholder="Add notes about this lead..."
-              disabled={!isEditMode}
-            />
-          </div>
+          {/* Notes */}
+          {renderSection(
+            'Notes & Updates',
+            'notes',
+            <div className="space-y-3">
+              <textarea
+                className="w-full rounded-lg border border-border bg-background text-foreground text-sm p-3 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary resize-none"
+                rows={4}
+                placeholder="Add notes about this lead..."
+                disabled={!isEditMode}
+              />
+            </div>
+          )}
         </div>
       </SheetContent>
     </Sheet>

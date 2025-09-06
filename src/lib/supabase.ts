@@ -325,6 +325,37 @@ export const resetEmailPassword = async (emailId: number, resetBy: string) => {
   }
 };
 
+export const setEmailPassword = async (emailId: number, newPassword: string, setBy: string) => {
+  try {
+    // Hash the new password
+    const hashedPassword = await hashPassword(newPassword);
+
+    const { data: emailAccount, error } = await supabase
+      .from('admin_emails')
+      .update({
+        password_hash: hashedPassword,
+        use_shared_password: false,
+        password_changed_at: new Date().toISOString()
+      })
+      .eq('id', emailId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Log audit
+    await logEmailAudit(emailAccount.admin_id, emailAccount.email, 'password_changed', {
+      set_by: setBy,
+      set_custom_password: true
+    });
+
+    return emailAccount;
+  } catch (error) {
+    console.error('Error setting email password:', error);
+    throw error;
+  }
+};
+
 export const getAllEmailAccounts = async () => {
   try {
     const { data: emailAccounts, error } = await supabase

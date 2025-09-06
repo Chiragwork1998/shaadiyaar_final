@@ -15,7 +15,7 @@ import { Input } from '../ui/input';
 import { toast } from 'react-hot-toast';
 import { supabase, createPendingApproval } from '../../lib/supabase';
 import { Booking } from '../../types';
-import { formatIndianCurrency, formatDate, BOOKING_SLOTS, getBookingStatusStyle, getBookingStatusDotColor, getBookingStatusTriggerStyle, getBookingStatusText, BOOKING_STATUSES, MENU_PREFERENCES, FLOWER_DECORATIONS, generateSerialNumber, generateSequentialSerialNumber } from '../../utils/helpers';
+import { formatIndianCurrency, formatDate, BOOKING_SLOTS, getBookingStatusStyle, getBookingStatusDotColor, getBookingStatusTriggerStyle, getBookingStatusText, BOOKING_STATUSES, MENU_PREFERENCES, FLOWER_DECORATIONS, generateSerialNumber, generateSequentialSerialNumber, HALLS, MENU_OPTIONS, BOOKING_UNITS, OCCASIONS, MEAL_TYPES, ONION_PREFERENCES, GARLIC_PREFERENCES } from '../../utils/helpers';
 import { parseISO, differenceInDays } from 'date-fns';
 import { useAuth } from '../../contexts/AuthContext';
 import { requiresApproval } from '../../utils/permissions';
@@ -65,6 +65,37 @@ const BookingDetailsModal: React.FC<{
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Basic Details */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-foreground border-b border-border pb-2">
+              Basic Details
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Serial No:</span>
+                  <span>{booking.serial_no || 'N/A'}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Unit:</span>
+                  <span>{booking.unit || 'N/A'}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Booking Date:</span>
+                  <span>{formatDate(booking.booking_date)}</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Status:</span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getBookingStatusStyle(booking.status)}`}>
+                    {getBookingStatusText(booking.status)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Client Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-foreground border-b border-border pb-2">
@@ -79,26 +110,16 @@ const BookingDetailsModal: React.FC<{
                 <div className="flex items-center justify-between">
                   <span className="font-medium">Contact Number:</span>
                   <span>{booking.contact_number || 'N/A'}</span>
-                  </div>
+                </div>
                 <div className="flex items-center justify-between">
-                    <span className="font-medium">Address:</span>
-                  <span>{booking.address || 'N/A'}</span>
-                  </div>
+                  <span className="font-medium">Address:</span>
+                  <span>{booking.client_address || 'N/A'}</span>
+                </div>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">Event Date:</span>
-                  <span>{formatDate(booking.event_date)}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">Slot:</span>
-                  <span>{booking.slot}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">Status:</span>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getBookingStatusStyle(booking.status)}`}>
-                    {getBookingStatusText(booking.status)}
-                  </span>
+                  <span className="font-medium">Date of Birth:</span>
+                  <span>{booking.date_of_birth ? formatDate(booking.date_of_birth) : 'N/A'}</span>
                 </div>
               </div>
             </div>
@@ -112,12 +133,86 @@ const BookingDetailsModal: React.FC<{
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">Menu Preference:</span>
-                  <span>{booking.menu_preference}</span>
+                  <span className="font-medium">Event Date:</span>
+                  <span>{formatDate(booking.date_of_function)}</span>
                 </div>
                 <div className="flex items-center justify-between">
+                  <span className="font-medium">Occasion:</span>
+                  <span>
+                    {booking.occasion === 'Other' && booking.custom_occasion_details 
+                      ? booking.custom_occasion_details 
+                      : booking.occasion}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Hall:</span>
+                  <span>{booking.hall || 'N/A'}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Meal Type:</span>
+                  <span>{booking.meal_type || 'N/A'}</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Timings From:</span>
+                  <span>{booking.timings_from || 'N/A'}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Timings To:</span>
+                  <span>{booking.timings_to || 'N/A'}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Pax (Number of Guests):</span>
+                  <span>{booking.pax || 'N/A'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Menu & Preferences */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-foreground border-b border-border pb-2">
+              Menu & Preferences
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Menu:</span>
+                  <span>{booking.menu || 'N/A'}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Onion Preference:</span>
+                  <span>{booking.onion_preference || 'N/A'}</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Garlic Preference:</span>
+                  <span>{booking.garlic_preference || 'N/A'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Services */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-foreground border-b border-border pb-2">
+              Services
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
                   <span className="font-medium">Flower Decoration:</span>
-                  <span>{booking.flower_decoration}</span>
+                  <span>
+                    {booking.flower_decoration === 'Custom' && booking.custom_flower_details 
+                      ? booking.custom_flower_details 
+                      : booking.flower_decoration}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Theme:</span>
+                  <span>{booking.theme || 'N/A'}</span>
                 </div>
               </div>
               <div className="space-y-2">
@@ -146,16 +241,16 @@ const BookingDetailsModal: React.FC<{
                   <span>{formatIndianCurrency(booking.gross_amount)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">GST Amount:</span>
-                  <span>{formatIndianCurrency(booking.gst_amount)}</span>
+                  <span className="font-medium">Tax Amount:</span>
+                  <span>{formatIndianCurrency(booking.tax_amount)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">Extras Amount:</span>
-                  <span>{formatIndianCurrency(booking.extras_amount)}</span>
+                  <span className="font-medium">Extra Plates Amount:</span>
+                  <span>{formatIndianCurrency(booking.extra_plates_amount)}</span>
                 </div>
                 <div className="flex items-center justify-between border-t border-border pt-2">
-                  <span className="font-semibold">Net Amount:</span>
-                  <span className="font-semibold">{formatIndianCurrency(booking.net_amount)}</span>
+                  <span className="font-semibold">Total Amount:</span>
+                  <span className="font-semibold">{formatIndianCurrency(booking.total_amount)}</span>
                 </div>
               </div>
               <div className="space-y-2">
@@ -175,6 +270,31 @@ const BookingDetailsModal: React.FC<{
             </div>
           </div>
           )}
+
+          {/* Additional Details */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-foreground border-b border-border pb-2">
+              Additional Details
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="flex items-start justify-between">
+                  <span className="font-medium">BTR:</span>
+                  <span className="text-right max-w-xs break-words">
+                    {booking.btr || 'N/A'}
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-start justify-between">
+                  <span className="font-medium">Remarks:</span>
+                  <span className="text-right max-w-xs break-words">
+                    {booking.remarks || 'N/A'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Part Payments */}
             <div className="space-y-4">
@@ -240,21 +360,51 @@ const EditBookingForm: React.FC<{
   onBookingUpdated: () => void;
 }> = ({ booking, isOpen, onClose, onBookingUpdated }) => {
   const [formData, setFormData] = useState({
+    // Basic Details
+    serial_no: '',
+    unit: 'UNIT-2',
+    
+    // Client Details
     client_name: '',
+    client_address: '',
     contact_number: '',
-    address: '',
-    event_date: '',
-    slot: 'Dinner',
-    menu_preference: 'Veg Platinum',
+    booking_date: new Date().toISOString().split('T')[0],
+    
+    // Event Details
+    date_of_function: '',
+    occasion: 'Wedding',
+    custom_occasion_details: '',
+    hall: 'Ground',
+    meal_type: 'Dinner',
+    timings_from: '',
+    timings_to: '',
+    pax: '',
+    
+    // Menu & Preferences
+    menu: 'Veg Silver',
+    onion_preference: 'Yes',
+    garlic_preference: 'Yes',
+    
+    // Services
     flower_decoration: 'Basic',
-    liquor_service: false,
+    custom_flower_details: '',
     dj_service: false,
+    liquor_service: false,
+    theme: '',
+    
+    // Financial Details
     gross_amount: '',
-    gst_amount: '',
-    extras_amount: '',
-    net_amount: '',
+    tax_amount: '',
+    extra_plates_amount: '',
+    total_amount: '',
     advance_paid: '',
     balance_amount: '',
+    
+    // Additional Details
+    btr: '',
+    remarks: '',
+    
+    // Status
     status: 'pending'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -263,22 +413,52 @@ const EditBookingForm: React.FC<{
   React.useEffect(() => {
     if (booking) {
       setFormData({
-        client_name: booking.client_name,
+        // Basic Details
+        serial_no: booking.serial_no || '',
+        unit: booking.unit || 'UNIT-2',
+        
+        // Client Details
+        client_name: booking.client_name || '',
+        client_address: booking.client_address || '',
         contact_number: booking.contact_number || '',
-        address: booking.address || '',
-        event_date: booking.event_date,
-        slot: booking.slot || 'Dinner',
-        menu_preference: booking.menu_preference || 'Veg Platinum',
+        booking_date: booking.booking_date || new Date().toISOString().split('T')[0],
+        
+        // Event Details - Map both old and new field names
+        date_of_function: booking.date_of_function || booking.event_date || '',
+        occasion: booking.occasion || 'Wedding',
+        custom_occasion_details: booking.custom_occasion_details || '',
+        hall: booking.hall || 'Ground',
+        meal_type: booking.meal_type || booking.slot || 'Dinner',
+        timings_from: booking.timings_from || '',
+        timings_to: booking.timings_to || '',
+        pax: booking.pax?.toString() || '',
+        
+        // Menu & Preferences - Map both old and new field names
+        menu: booking.menu || booking.menu_preference || 'Veg Silver',
+        onion_preference: booking.onion_preference || 'Yes',
+        garlic_preference: booking.garlic_preference || 'Yes',
+        
+        // Services
         flower_decoration: booking.flower_decoration || 'Basic',
-        liquor_service: booking.liquor_service,
-        dj_service: booking.dj_service,
-        gross_amount: booking.gross_amount.toString(),
-        gst_amount: booking.gst_amount.toString(),
-        extras_amount: booking.extras_amount.toString(),
-        net_amount: booking.net_amount.toString(),
-        advance_paid: booking.advance_paid.toString(),
-        balance_amount: booking.balance_amount.toString(),
-        status: booking.status
+        custom_flower_details: booking.custom_flower_details || '',
+        dj_service: booking.dj_service || false,
+        liquor_service: booking.liquor_service || false,
+        theme: booking.theme || '',
+        
+        // Financial Details - Map both old and new field names
+        gross_amount: booking.gross_amount?.toString() || '',
+        tax_amount: booking.tax_amount?.toString() || booking.gst_amount?.toString() || '',
+        extra_plates_amount: booking.extra_plates_amount?.toString() || booking.extras_amount?.toString() || '',
+        total_amount: booking.total_amount?.toString() || booking.net_amount?.toString() || '',
+        advance_paid: booking.advance_paid?.toString() || '',
+        balance_amount: booking.balance_amount?.toString() || '',
+        
+        // Additional Details
+        btr: booking.btr || '',
+        remarks: booking.remarks || '',
+        
+        // Status
+        status: booking.status || 'pending'
       });
     }
   }, [booking]);
@@ -288,18 +468,18 @@ const EditBookingForm: React.FC<{
       const newData = { ...prev, [field]: value };
       
       // Calculate amounts immediately when relevant fields change
-      if (['gross_amount', 'gst_amount', 'extras_amount', 'advance_paid'].includes(field)) {
+      if (['gross_amount', 'tax_amount', 'extra_plates_amount', 'advance_paid'].includes(field)) {
         const gross = parseFloat(newData.gross_amount) || 0;
-        const gst = parseFloat(newData.gst_amount) || 0;
-        const extras = parseFloat(newData.extras_amount) || 0;
+        const tax = parseFloat(newData.tax_amount) || 0;
+        const extraPlates = parseFloat(newData.extra_plates_amount) || 0;
         const advance = parseFloat(newData.advance_paid) || 0;
         
-        const net = gross + gst + extras;
-        const balance = net - advance;
+        const total = gross + tax + extraPlates;
+        const balance = total - advance;
         
         return {
           ...newData,
-          net_amount: net.toFixed(2),
+          total_amount: total.toFixed(2),
           balance_amount: balance.toFixed(2)
         };
       }
@@ -316,7 +496,7 @@ const EditBookingForm: React.FC<{
   const { user } = useAuth();
 
   const submitForm = async () => {
-    if (!booking || !formData.client_name || !formData.event_date) {
+    if (!booking || !formData.client_name || !formData.date_of_function) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -326,24 +506,38 @@ const EditBookingForm: React.FC<{
     setIsSubmitting(true);
     try {
       const bookingData = {
-        serial_no: generateSerialNumber(),
+        serial_no: formData.serial_no,
+        unit: formData.unit,
         client_name: formData.client_name,
+        client_address: formData.client_address,
         contact_number: formData.contact_number,
-        address: formData.address,
-        event_date: formData.event_date,
-        slot: formData.slot,
-        menu_preference: formData.menu_preference,
+        booking_date: formData.booking_date,
+        event_date: formData.date_of_function, // Map to old field for compatibility
+        date_of_function: formData.date_of_function,
+        occasion: formData.occasion,
+        custom_occasion_details: formData.custom_occasion_details,
+        hall: formData.hall,
+        meal_type: formData.meal_type,
+        timings_from: formData.timings_from,
+        timings_to: formData.timings_to,
+        pax: parseInt(formData.pax) || 0,
+        menu: formData.menu,
+        onion_preference: formData.onion_preference,
+        garlic_preference: formData.garlic_preference,
         flower_decoration: formData.flower_decoration,
-        liquor_service: formData.liquor_service,
+        custom_flower_details: formData.custom_flower_details,
         dj_service: formData.dj_service,
+        liquor_service: formData.liquor_service,
+        theme: formData.theme,
         gross_amount: parseFloat(formData.gross_amount) || 0,
-        gst_amount: parseFloat(formData.gst_amount) || 0,
-        extras_amount: parseFloat(formData.extras_amount) || 0,
-        net_amount: parseFloat(formData.net_amount) || 0,
+        tax_amount: parseFloat(formData.tax_amount) || 0,
+        extra_plates_amount: parseFloat(formData.extra_plates_amount) || 0,
+        total_amount: parseFloat(formData.total_amount) || 0,
         advance_paid: parseFloat(formData.advance_paid) || 0,
         balance_amount: parseFloat(formData.balance_amount) || 0,
-        status: formData.status,
-        booking_date: new Date().toISOString().split('T')[0]
+        btr: formData.btr,
+        remarks: formData.remarks,
+        status: formData.status
       };
 
       // Validate booking data before submission
@@ -442,12 +636,49 @@ const EditBookingForm: React.FC<{
                 Address
               </label>
               <textarea
-                value={formData.address}
-                onChange={(e) => handleInputChange('address', e.target.value)}
+                value={formData.client_address}
+                onChange={(e) => handleInputChange('client_address', e.target.value)}
                 className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring resize-none"
                 rows={2}
                 placeholder="Enter client address"
               />
+            </div>
+          </div>
+
+          {/* Basic Details */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-foreground">Basic Details</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Serial No.
+                </label>
+                <input
+                  type="text"
+                  value={formData.serial_no}
+                  onChange={(e) => handleInputChange('serial_no', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  placeholder="O1, O2, etc."
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Unit
+                </label>
+                <Select value={formData.unit} onValueChange={(value) => handleInputChange('unit', value)}>
+                  <SelectTrigger className="w-full mt-1">
+                    <SelectValue placeholder="Select unit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BOOKING_UNITS.map((unit) => (
+                      <SelectItem key={unit.value} value={unit.value}>
+                        {unit.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
@@ -462,44 +693,134 @@ const EditBookingForm: React.FC<{
                 </label>
                 <input
                   type="date"
-                  value={formData.event_date}
-                  onChange={(e) => handleInputChange('event_date', e.target.value)}
+                  value={formData.date_of_function}
+                  onChange={(e) => handleInputChange('date_of_function', e.target.value)}
                   className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
                   required
                 />
               </div>
 
               <div>
-                <label className="text-sm font-medium text-foreground flex items-center">
-                  <Clock className="w-4 h-4 mr-2" />
-                  Slot of Event
+                <label className="text-sm font-medium text-foreground">
+                  Occasion
                 </label>
-                <Select value={formData.slot} onValueChange={(value) => handleInputChange('slot', value)}>
+                <Select value={formData.occasion} onValueChange={(value) => handleInputChange('occasion', value)}>
                   <SelectTrigger className="w-full mt-1">
-                    <SelectValue placeholder="Select slot" />
+                    <SelectValue placeholder="Select occasion" />
                   </SelectTrigger>
                   <SelectContent>
-                    {BOOKING_SLOTS.map((slot) => (
-                      <SelectItem key={slot.value} value={slot.value}>
-                        {slot.label}
+                    {OCCASIONS.map((occasion) => (
+                      <SelectItem key={occasion.value} value={occasion.value}>
+                        {occasion.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {formData.occasion === 'Other' && (
+                  <div className="mt-2">
+                    <label className="text-sm font-medium text-foreground">Custom Occasion Details</label>
+                    <input
+                      type="text"
+                      value={formData.custom_occasion_details}
+                      onChange={(e) => handleInputChange('custom_occasion_details', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                      placeholder="Enter custom occasion details"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Hall
+                </label>
+                <Select value={formData.hall} onValueChange={(value) => handleInputChange('hall', value)}>
+                  <SelectTrigger className="w-full mt-1">
+                    <SelectValue placeholder="Select hall" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {HALLS.map((hall) => (
+                      <SelectItem key={hall.value} value={hall.value}>
+                        {hall.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-            </div>
 
+              <div>
+                <label className="text-sm font-medium text-foreground flex items-center">
+                  <Clock className="w-4 h-4 mr-2" />
+                  Meal Type
+                </label>
+                <Select value={formData.meal_type} onValueChange={(value) => handleInputChange('meal_type', value)}>
+                  <SelectTrigger className="w-full mt-1">
+                    <SelectValue placeholder="Select meal type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MEAL_TYPES.map((meal) => (
+                      <SelectItem key={meal.value} value={meal.value}>
+                        {meal.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Timings From
+                </label>
+                <input
+                  type="time"
+                  value={formData.timings_from}
+                  onChange={(e) => handleInputChange('timings_from', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Timings To
+                </label>
+                <input
+                  type="time"
+                  value={formData.timings_to}
+                  onChange={(e) => handleInputChange('timings_to', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Pax (Number of Guests)
+                </label>
+                <input
+                  type="number"
+                  value={formData.pax}
+                  onChange={(e) => handleInputChange('pax', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  placeholder="Enter number of guests"
+                  min="1"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Menu & Preferences */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-foreground">Menu & Preferences</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-sm font-medium text-foreground">
-                  Menu Preference
+                  Menu
                 </label>
-                <Select value={formData.menu_preference} onValueChange={(value) => handleInputChange('menu_preference', value)}>
+                <Select value={formData.menu} onValueChange={(value) => handleInputChange('menu', value)}>
                   <SelectTrigger className="w-full mt-1">
-                    <SelectValue placeholder="Select menu preference" />
+                    <SelectValue placeholder="Select menu" />
                   </SelectTrigger>
                   <SelectContent>
-                    {MENU_PREFERENCES.map((menu) => (
+                    {MENU_OPTIONS.map((menu) => (
                       <SelectItem key={menu.value} value={menu.value}>
                         {menu.label}
                       </SelectItem>
@@ -508,6 +829,48 @@ const EditBookingForm: React.FC<{
                 </Select>
               </div>
 
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Onion Preference
+                </label>
+                <Select value={formData.onion_preference} onValueChange={(value) => handleInputChange('onion_preference', value)}>
+                  <SelectTrigger className="w-full mt-1">
+                    <SelectValue placeholder="Select preference" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ONION_PREFERENCES.map((pref) => (
+                      <SelectItem key={pref.value} value={pref.value}>
+                        {pref.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Garlic Preference
+                </label>
+                <Select value={formData.garlic_preference} onValueChange={(value) => handleInputChange('garlic_preference', value)}>
+                  <SelectTrigger className="w-full mt-1">
+                    <SelectValue placeholder="Select preference" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {GARLIC_PREFERENCES.map((pref) => (
+                      <SelectItem key={pref.value} value={pref.value}>
+                        {pref.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          {/* Services */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-foreground">Services</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-sm font-medium text-foreground">
                   Flower Decoration
@@ -524,6 +887,31 @@ const EditBookingForm: React.FC<{
                     ))}
                   </SelectContent>
                 </Select>
+                {formData.flower_decoration === 'Custom' && (
+                  <div className="mt-2">
+                    <label className="text-sm font-medium text-foreground">Custom Flower Details</label>
+                    <input
+                      type="text"
+                      value={formData.custom_flower_details}
+                      onChange={(e) => handleInputChange('custom_flower_details', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                      placeholder="Enter custom flower decoration details"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Theme
+                </label>
+                <input
+                  type="text"
+                  value={formData.theme}
+                  onChange={(e) => handleInputChange('theme', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  placeholder="Enter theme"
+                />
               </div>
             </div>
 
@@ -582,9 +970,9 @@ const EditBookingForm: React.FC<{
             </div>
           </div>
 
-          {/* Booking Amount */}
+          {/* Financial Details */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-foreground text-red-600">Booking Amount</h3>
+            <h3 className="text-sm font-semibold text-foreground text-red-600">Financial Details</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-sm font-medium text-foreground flex items-center">
@@ -602,37 +990,37 @@ const EditBookingForm: React.FC<{
 
               <div>
                 <label className="text-sm font-medium text-foreground">
-                  GST
+                  Tax
                 </label>
                 <input
                   type="number"
-                  value={formData.gst_amount}
-                  onChange={(e) => handleInputChange('gst_amount', e.target.value)}
+                  value={formData.tax_amount}
+                  onChange={(e) => handleInputChange('tax_amount', e.target.value)}
                   className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
-                  placeholder="Enter GST amount"
+                  placeholder="Enter tax amount"
                 />
               </div>
 
               <div>
                 <label className="text-sm font-medium text-foreground">
-                  Extras
+                  Extra Plates
                 </label>
                 <input
                   type="number"
-                  value={formData.extras_amount}
-                  onChange={(e) => handleInputChange('extras_amount', e.target.value)}
+                  value={formData.extra_plates_amount}
+                  onChange={(e) => handleInputChange('extra_plates_amount', e.target.value)}
                   className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
-                  placeholder="Enter extras amount"
+                  placeholder="Enter extra plates amount"
                 />
               </div>
 
               <div>
                 <label className="text-sm font-medium text-foreground">
-                  Net Booking
+                  Total Amount
                 </label>
                 <input
                   type="number"
-                  value={formData.net_amount}
+                  value={formData.total_amount}
                   readOnly
                   className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm bg-muted"
                   placeholder="Auto calculated"
@@ -641,7 +1029,7 @@ const EditBookingForm: React.FC<{
 
               <div>
                 <label className="text-sm font-medium text-foreground">
-                  Advance
+                  Advance Paid
                 </label>
                 <input
                   type="number"
@@ -654,7 +1042,7 @@ const EditBookingForm: React.FC<{
 
               <div>
                 <label className="text-sm font-medium text-foreground">
-                  Balance
+                  Balance Amount
                 </label>
                 <input
                   type="number"
@@ -664,6 +1052,57 @@ const EditBookingForm: React.FC<{
                   placeholder="Auto calculated"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Additional Details */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-foreground">Additional Details</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  BTR
+                </label>
+                <textarea
+                  value={formData.btr}
+                  onChange={(e) => handleInputChange('btr', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring resize-none"
+                  rows={3}
+                  placeholder="Enter BTR details"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Remarks
+                </label>
+                <textarea
+                  value={formData.remarks}
+                  onChange={(e) => handleInputChange('remarks', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring resize-none"
+                  rows={3}
+                  placeholder="Enter remarks"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Status */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-foreground">Status</h3>
+            <div>
+              <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {BOOKING_STATUSES.map((status) => (
+                    <SelectItem key={status.value} value={status.value}>
+                      {status.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </form>
@@ -706,7 +1145,7 @@ const EditBookingForm: React.FC<{
 const printBooking = (booking: Booking, partPayments: any[]) => {
   const bookingPartPayments = partPayments.filter(p => p.booking_id === booking.booking_id);
   const totalPartPayments = bookingPartPayments.reduce((sum, p) => sum + p.amount, 0);
-  const actualBalance = booking.net_amount - booking.advance_paid - totalPartPayments;
+  const actualBalance = booking.total_amount - booking.advance_paid - totalPartPayments;
 
   const printWindow = window.open('', '_blank');
   if (!printWindow) return;
@@ -1129,11 +1568,12 @@ const AddBookingForm: React.FC<{
     client_name: '',
     client_address: '',
     contact_number: '',
-    date_of_birth: '',
+    booking_date: new Date().toISOString().split('T')[0],
     
     // Event Details
     date_of_function: '',
     occasion: 'Wedding',
+    custom_occasion_details: '',
     hall: 'Main Hall',
     meal_type: 'Dinner',
     timings_from: '',
@@ -1141,12 +1581,13 @@ const AddBookingForm: React.FC<{
     pax: '',
     
     // Menu & Preferences
-    menu: 'Veg Menu',
+    menu: 'Veg Silver',
     onion_preference: 'Yes',
     garlic_preference: 'Yes',
     
     // Services
     flower_decoration: 'Basic',
+    custom_flower_details: '',
     dj_service: false,
     liquor_service: false,
     theme: '',
@@ -1168,18 +1609,26 @@ const AddBookingForm: React.FC<{
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Auto-generate serial number when form opens
+  // Auto-generate serial number and set booking date when form opens
   React.useEffect(() => {
     if (isOpen) {
       const generateSerial = async () => {
         try {
           const nextSerial = await generateSequentialSerialNumber();
-          setFormData(prev => ({ ...prev, serial_no: nextSerial }));
+          setFormData(prev => ({ 
+            ...prev, 
+            serial_no: nextSerial,
+            booking_date: new Date().toISOString().split('T')[0]
+          }));
         } catch (error) {
           console.error('Error generating serial number:', error);
           // Fallback to random number
           const randomNum = Math.floor(Math.random() * 999) + 1;
-          setFormData(prev => ({ ...prev, serial_no: `O${randomNum}` }));
+          setFormData(prev => ({ 
+            ...prev, 
+            serial_no: `O${randomNum}`,
+            booking_date: new Date().toISOString().split('T')[0]
+          }));
         }
       };
       generateSerial();
@@ -1240,10 +1689,11 @@ const AddBookingForm: React.FC<{
         client_name: formData.client_name,
         client_address: formData.client_address,
         contact_number: formData.contact_number,
-        date_of_birth: formData.date_of_birth,
+        booking_date: formData.booking_date,
         event_date: formData.date_of_function, // Map to old field for compatibility
         date_of_function: formData.date_of_function,
         occasion: formData.occasion,
+        custom_occasion_details: formData.custom_occasion_details,
         hall: formData.hall,
         meal_type: formData.meal_type,
         timings_from: formData.timings_from,
@@ -1253,6 +1703,7 @@ const AddBookingForm: React.FC<{
         onion_preference: formData.onion_preference,
         garlic_preference: formData.garlic_preference,
         flower_decoration: formData.flower_decoration,
+        custom_flower_details: formData.custom_flower_details,
         dj_service: formData.dj_service,
         liquor_service: formData.liquor_service,
         theme: formData.theme,
@@ -1319,18 +1770,20 @@ const AddBookingForm: React.FC<{
           client_name: '',
           client_address: '',
           contact_number: '',
-          date_of_birth: '',
+          booking_date: new Date().toISOString().split('T')[0],
           date_of_function: '',
           occasion: 'Wedding',
-          hall: 'Main Hall',
+          custom_occasion_details: '',
+          hall: 'Ground',
           meal_type: 'Dinner',
           timings_from: '',
           timings_to: '',
           pax: '',
-          menu: 'Veg Menu',
+          menu: 'Veg Silver',
           onion_preference: 'Yes',
           garlic_preference: 'Yes',
           flower_decoration: 'Basic',
+          custom_flower_details: '',
           dj_service: false,
           liquor_service: false,
           theme: '',
@@ -1366,18 +1819,20 @@ const AddBookingForm: React.FC<{
         client_name: '',
         client_address: '',
         contact_number: '',
-        date_of_birth: '',
+        booking_date: new Date().toISOString().split('T')[0],
         date_of_function: '',
         occasion: 'Wedding',
-        hall: 'Main Hall',
+        custom_occasion_details: '',
+        hall: 'Ground',
         meal_type: 'Dinner',
         timings_from: '',
         timings_to: '',
         pax: '',
-        menu: 'Veg Menu',
+        menu: 'Veg Silver',
         onion_preference: 'Yes',
         garlic_preference: 'Yes',
         flower_decoration: 'Basic',
+        custom_flower_details: '',
         dj_service: false,
         liquor_service: false,
         theme: '',
@@ -1486,12 +1941,13 @@ const AddBookingForm: React.FC<{
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-foreground">Date of Birth</label>
+                <label className="text-sm font-medium text-foreground">Date of Booking</label>
                 <input
                   type="date"
-                  value={formData.date_of_birth}
-                  onChange={(e) => handleInputChange('date_of_birth', e.target.value)}
-                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  value={formData.booking_date}
+                  readOnly
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm bg-gray-50 text-gray-600 cursor-not-allowed"
+                  title="Booking date is automatically set to today's date"
                 />
               </div>
             </div>
@@ -1517,6 +1973,18 @@ const AddBookingForm: React.FC<{
                     <SelectItem value="Other">Other</SelectItem>
                   </SelectContent>
                 </Select>
+                {formData.occasion === 'Other' && (
+                  <div className="mt-2">
+                    <label className="text-sm font-medium text-foreground">Custom Occasion Details</label>
+                    <input
+                      type="text"
+                      value={formData.custom_occasion_details}
+                      onChange={(e) => handleInputChange('custom_occasion_details', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                      placeholder="Enter custom occasion details"
+                    />
+                  </div>
+                )}
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground">Hall</label>
@@ -1525,11 +1993,11 @@ const AddBookingForm: React.FC<{
                     <SelectValue placeholder="Select hall" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Main Hall">Main Hall</SelectItem>
-                    <SelectItem value="VIP Hall">VIP Hall</SelectItem>
-                    <SelectItem value="Garden Area">Garden Area</SelectItem>
-                    <SelectItem value="Outdoor Area">Outdoor Area</SelectItem>
-                    <SelectItem value="Private Room">Private Room</SelectItem>
+                    {HALLS.map((hall) => (
+                      <SelectItem key={hall.value} value={hall.value}>
+                        {hall.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -1589,11 +2057,12 @@ const AddBookingForm: React.FC<{
                     <SelectValue placeholder="Select menu" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Veg Menu">Veg Menu</SelectItem>
-                    <SelectItem value="Non-Veg Menu">Non-Veg Menu</SelectItem>
-                    <SelectItem value="Mixed Menu">Mixed Menu</SelectItem>
-                    <SelectItem value="Premium Veg">Premium Veg</SelectItem>
-                    <SelectItem value="Premium Non-Veg">Premium Non-Veg</SelectItem>
+                    <SelectItem value="Veg Silver">Veg Silver</SelectItem>
+                    <SelectItem value="Non-Veg Silver">Non-Veg Silver</SelectItem>
+                    <SelectItem value="Veg Gold">Veg Gold</SelectItem>
+                    <SelectItem value="Non-Veg Gold">Non-Veg Gold</SelectItem>
+                    <SelectItem value="Veg Platinum">Veg Platinum</SelectItem>
+                    <SelectItem value="Non-Veg Platinum">Non-Veg Platinum</SelectItem>
                     <SelectItem value="Custom Menu">Custom Menu</SelectItem>
                   </SelectContent>
                 </Select>
@@ -1645,6 +2114,18 @@ const AddBookingForm: React.FC<{
                     <SelectItem value="None">None</SelectItem>
                   </SelectContent>
                 </Select>
+                {formData.flower_decoration === 'Custom' && (
+                  <div className="mt-2">
+                    <label className="text-sm font-medium text-foreground">Custom Flower Details</label>
+                    <input
+                      type="text"
+                      value={formData.custom_flower_details}
+                      onChange={(e) => handleInputChange('custom_flower_details', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                      placeholder="Enter custom flower decoration details"
+                    />
+                  </div>
+                )}
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground">Theme</label>
@@ -1869,17 +2350,17 @@ const MobileBookingCard: React.FC<{
       <div className="grid grid-cols-2 gap-3 text-sm">
         <div>
           <div className="text-muted-foreground">Event Date</div>
-          <div className="font-medium">{formatDate(booking.event_date)}</div>
-        </div>
-        <div>
-          <div className="text-muted-foreground">Slot</div>
-          <div className="font-medium">{booking.slot}</div>
+          <div className="font-medium">{formatDate(booking.date_of_function)}</div>
+          </div>
+          <div>
+          <div className="text-muted-foreground">Meal Type</div>
+          <div className="font-medium">{booking.meal_type}</div>
           </div>
         {canViewFinancialData && (
           <>
             <div>
               <div className="text-muted-foreground">Total Amount</div>
-              <div className="font-medium">{formatIndianCurrency(booking.total_amount || booking.net_amount)}</div>
+              <div className="font-medium">{formatIndianCurrency(booking.total_amount)}</div>
       </div>
             <div>
               <div className="text-muted-foreground">Balance</div>
@@ -2238,7 +2719,7 @@ const BookingTable: React.FC<BookingTableProps> = ({
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
                     <div className="text-muted-foreground">Date</div>
-                    <div>{formatDate(booking.event_date)}</div>
+                    <div>{formatDate(booking.date_of_function)}</div>
                   </div>
                   <div>
                     <div className="text-muted-foreground">Amount</div>
@@ -2310,9 +2791,9 @@ const BookingTable: React.FC<BookingTableProps> = ({
                       )}
                     </div>
                   </td>
-                  <td className="py-3 px-4 text-muted-foreground text-sm">{formatDate(booking.event_date)}</td>
-                  <td className="py-3 px-4 text-muted-foreground text-sm">{booking.slot || 'N/A'}</td>
-                  <td className="py-3 px-4 text-muted-foreground text-sm">{booking.menu_preference || 'N/A'}</td>
+                  <td className="py-3 px-4 text-muted-foreground text-sm">{formatDate(booking.date_of_function)}</td>
+                  <td className="py-3 px-4 text-muted-foreground text-sm">{booking.meal_type || 'N/A'}</td>
+                  <td className="py-3 px-4 text-muted-foreground text-sm">{booking.menu || 'N/A'}</td>
                   {canViewFinancialData && (
                     <>
                   <td className="py-3 px-4 font-medium text-sm">{formatIndianCurrency(booking.total_amount)}</td>

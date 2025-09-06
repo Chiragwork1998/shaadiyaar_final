@@ -72,19 +72,21 @@ const BookingEdit: React.FC<BookingEditProps> = ({
     // Event Details
     date_of_function: '',
     occasion: 'Wedding',
-    hall: 'Main Hall',
+    custom_occasion_details: '',
+      hall: 'Ground',
     meal_type: 'Dinner',
     timings_from: '',
     timings_to: '',
     pax: '',
     
     // Menu & Preferences
-    menu: 'Veg Menu',
+    menu: 'Veg Silver',
     onion_preference: 'Yes',
     garlic_preference: 'Yes',
     
     // Services
     flower_decoration: 'Basic',
+    custom_flower_details: '',
     dj_service: false,
     liquor_service: false,
     theme: '',
@@ -117,15 +119,17 @@ const BookingEdit: React.FC<BookingEditProps> = ({
         date_of_birth: booking.date_of_birth || '',
         date_of_function: booking.date_of_function || '',
         occasion: booking.occasion || 'Wedding',
-        hall: booking.hall || 'Main Hall',
+        custom_occasion_details: booking.custom_occasion_details || '',
+        hall: booking.hall || 'Ground',
         meal_type: booking.meal_type || 'Dinner',
         timings_from: booking.timings_from || '',
         timings_to: booking.timings_to || '',
         pax: booking.pax?.toString() || '',
-        menu: booking.menu || 'Veg Menu',
+        menu: booking.menu || 'Veg Silver',
         onion_preference: booking.onion_preference || 'Yes',
         garlic_preference: booking.garlic_preference || 'Yes',
         flower_decoration: booking.flower_decoration || 'Basic',
+        custom_flower_details: booking.custom_flower_details || '',
         dj_service: booking.dj_service || false,
         liquor_service: booking.liquor_service || false,
         theme: booking.theme || '',
@@ -188,6 +192,7 @@ const BookingEdit: React.FC<BookingEditProps> = ({
         date_of_birth: formData.date_of_birth,
         date_of_function: formData.date_of_function,
         occasion: formData.occasion,
+        custom_occasion_details: formData.custom_occasion_details,
         hall: formData.hall,
         meal_type: formData.meal_type,
         timings_from: formData.timings_from,
@@ -197,6 +202,7 @@ const BookingEdit: React.FC<BookingEditProps> = ({
         onion_preference: formData.onion_preference,
         garlic_preference: formData.garlic_preference,
         flower_decoration: formData.flower_decoration,
+        custom_flower_details: formData.custom_flower_details,
         dj_service: formData.dj_service,
         liquor_service: formData.liquor_service,
         theme: formData.theme,
@@ -336,11 +342,13 @@ const BookingEdit: React.FC<BookingEditProps> = ({
               </div>
               
               <div>
-                <Label className="text-sm font-medium">Date of Birth</Label>
+                <Label className="text-sm font-medium">Date of Booking</Label>
                 <Input
                   type="date"
-                  value={formData.date_of_birth}
-                  onChange={(e) => handleInputChange('date_of_birth', e.target.value)}
+                  value={formData.booking_date}
+                  readOnly
+                  className="bg-gray-50 text-gray-600 cursor-not-allowed"
+                  title="Booking date cannot be changed after creation"
                 />
               </div>
             </div>
@@ -373,6 +381,17 @@ const BookingEdit: React.FC<BookingEditProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
+                {formData.occasion === 'Other' && (
+                  <div className="mt-2">
+                    <Label className="text-sm font-medium">Custom Occasion Details</Label>
+                    <Input
+                      type="text"
+                      value={formData.custom_occasion_details}
+                      onChange={(e) => handleInputChange('custom_occasion_details', e.target.value)}
+                      placeholder="Enter custom occasion details"
+                    />
+                  </div>
+                )}
               </div>
               
               <div>
@@ -528,6 +547,17 @@ const BookingEdit: React.FC<BookingEditProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
+                {formData.flower_decoration === 'Custom' && (
+                  <div className="mt-2">
+                    <Label className="text-sm font-medium">Custom Flower Details</Label>
+                    <Input
+                      type="text"
+                      value={formData.custom_flower_details}
+                      onChange={(e) => handleInputChange('custom_flower_details', e.target.value)}
+                      placeholder="Enter custom flower decoration details"
+                    />
+                  </div>
+                )}
               </div>
               
               <div>

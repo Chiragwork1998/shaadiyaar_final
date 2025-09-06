@@ -113,7 +113,6 @@ const Leads = () => {
       const query = searchQuery.toLowerCase();
       result = result.filter(lead => 
         lead.name.toLowerCase().includes(query) ||
-        (lead.location && lead.location.toLowerCase().includes(query)) ||
         (lead.number && lead.number.toLowerCase().includes(query))
       );
     }

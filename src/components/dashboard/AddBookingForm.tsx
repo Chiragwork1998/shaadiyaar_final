@@ -37,6 +37,7 @@ const AddBookingForm: React.FC<AddBookingFormProps> = ({
     slot: 'Dinner',
     menu_preference: 'Veg Platinum',
     flower_decoration: 'Basic',
+    custom_flower_details: '',
     liquor_service: false,
     dj_service: false,
     gross_amount: '',
@@ -94,6 +95,7 @@ const AddBookingForm: React.FC<AddBookingFormProps> = ({
         slot: formData.slot,
         menu_preference: formData.menu_preference,
         flower_decoration: formData.flower_decoration,
+        custom_flower_details: formData.custom_flower_details,
         liquor_service: formData.liquor_service,
         dj_service: formData.dj_service,
         gross_amount: parseFloat(formData.gross_amount) || 0,
@@ -304,6 +306,18 @@ const AddBookingForm: React.FC<AddBookingFormProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
+                {formData.flower_decoration === 'Custom' && (
+                  <div className="mt-2">
+                    <label className="text-sm font-medium text-foreground">Custom Flower Details</label>
+                    <input
+                      type="text"
+                      value={formData.custom_flower_details}
+                      onChange={(e) => handleInputChange('custom_flower_details', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                      placeholder="Enter custom flower decoration details"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 

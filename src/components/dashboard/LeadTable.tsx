@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Plus, ChevronDown, Phone, Star, Clock, MapPin, MoreHorizontal, Share2, Pencil, ArrowUp, ArrowDown, Trash2, AlertTriangle, Check, X, Eye, Grid3X3, List, User, Mail, Calendar, DollarSign, Building } from 'lucide-react';
+import { Search, Plus, ChevronDown, Phone, Star, Clock, MoreHorizontal, Share2, Pencil, ArrowUp, ArrowDown, Trash2, AlertTriangle, Check, X, Eye, Grid3X3, List, User, Mail, Calendar, DollarSign, Building } from 'lucide-react';
 import { Button } from '../ui/Button';
 import {
   Select,
@@ -18,7 +18,7 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 import { Lead } from '../../types';
-import { formatCurrency, formatDate, LEAD_TYPES, getLeadTypeStyle, getStatusDotColor, getLeadStatusTriggerStyle, getStatusText, LEAD_STATUSES, formatIndianCurrency } from '../../utils/helpers';
+import { formatCurrency, formatDate, LEAD_TYPES, getLeadTypeStyle, getStatusDotColor, getLeadStatusTriggerStyle, getStatusText, LEAD_STATUSES, formatIndianCurrency, MENU_OPTIONS } from '../../utils/helpers';
 import { parseISO, differenceInDays } from 'date-fns';
 import { supabase } from '../../lib/supabase';
 import toast from 'react-hot-toast';
@@ -32,11 +32,15 @@ const AddLeadForm: React.FC<{
   const [formData, setFormData] = useState({
     name: '',
     number: '',
-    location: '',
     wedding_date: '',
     budget: '',
     lead_type: 'Hot Lead',
-    status: 'new'
+    status: 'new',
+    type_of_event: '',
+    quotation: '',
+    menu_option: '',
+    menu_quote: '',
+    updates: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -68,11 +72,15 @@ const AddLeadForm: React.FC<{
         .insert([{
           name: formData.name,
           number: formData.number,
-          location: formData.location,
           wedding_date: formData.wedding_date,
           numeric_budget: parseFloat(formData.budget) || 0,
           lead_type: formData.lead_type,
           status: formData.status,
+          type_of_event: formData.type_of_event || '',
+          quotation: formData.quotation || '',
+          menu_option: formData.menu_option || '',
+          menu_quote: formData.menu_quote || '',
+          updates: formData.updates || '',
           lead_create_date: new Date().toISOString()
         }])
         .select();
@@ -86,11 +94,15 @@ const AddLeadForm: React.FC<{
       setFormData({
         name: '',
         number: '',
-        location: '',
         wedding_date: '',
         budget: '',
         lead_type: 'Hot Lead',
-        status: 'new'
+        status: 'new',
+        type_of_event: '',
+        quotation: '',
+        menu_option: '',
+        menu_quote: '',
+        updates: ''
       });
       onClose();
       // Real-time updates should handle this automatically
@@ -149,29 +161,15 @@ const AddLeadForm: React.FC<{
               />
             </div>
 
-            <div>
-              <label className="text-sm font-medium text-foreground flex items-center">
-                <MapPin className="w-4 h-4 mr-2" />
-                Location *
-              </label>
-              <input
-                type="text"
-                value={formData.location}
-                onChange={(e) => handleInputChange('location', e.target.value)}
-                className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
-                placeholder="Enter location"
-                required
-              />
-            </div>
           </div>
 
-          {/* Wedding Details */}
+          {/* Event Details */}
           <div className="space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-sm font-medium text-foreground flex items-center">
                   <Calendar className="w-4 h-4 mr-2" />
-                  Wedding Date *
+                  Date of Event *
                 </label>
                 <input
                   type="date"
@@ -185,7 +183,7 @@ const AddLeadForm: React.FC<{
               <div>
                 <label className="text-sm font-medium text-foreground flex items-center">
                   <DollarSign className="w-4 h-4 mr-2" />
-                  Budget
+                  Party Budget
                 </label>
                 <input
                   type="number"
@@ -241,6 +239,74 @@ const AddLeadForm: React.FC<{
             </div>
           </div>
 
+          {/* Additional Details */}
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold text-foreground">Additional Details</h3>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-foreground">Type of Event</label>
+                <input
+                  type="text"
+                  value={formData.type_of_event}
+                  onChange={(e) => handleInputChange('type_of_event', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  placeholder="e.g., Wedding, Birthday, Corporate Event"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground">Quotation</label>
+                <input
+                  type="text"
+                  value={formData.quotation}
+                  onChange={(e) => handleInputChange('quotation', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  placeholder="Enter quotation details"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-foreground">Menu Option</label>
+                <Select value={formData.menu_option} onValueChange={(value) => handleInputChange('menu_option', value)}>
+                  <SelectTrigger className="w-full mt-1">
+                    <SelectValue placeholder="Select menu option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MENU_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground">Menu Quote</label>
+                <input
+                  type="text"
+                  value={formData.menu_quote}
+                  onChange={(e) => handleInputChange('menu_quote', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  placeholder="Enter menu quote amount"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-foreground">Updates & Notes</label>
+              <textarea
+                value={formData.updates}
+                onChange={(e) => handleInputChange('updates', e.target.value)}
+                className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                placeholder="Add updates, notes, or follow-up details..."
+                rows={3}
+              />
+            </div>
+          </div>
 
         </form>
 
@@ -427,11 +493,33 @@ const MobileLeadCard: React.FC<{
         <div className="space-y-2">
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-            <span className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Location</span>
+            <span className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Status</span>
           </div>
-          <div className="flex items-center text-foreground text-sm">
-            <MapPin className="w-4 h-4 mr-2 text-muted-foreground" />
-            <span className="truncate">{lead.location}</span>
+          <div className="flex items-center">
+            <Select
+              value={lead.status}
+              onValueChange={(value) => onStatusChange(lead.lead_id, value)}
+              disabled={updatingStatus === lead.lead_id}
+            >
+              <SelectTrigger 
+                className={`w-full border focus:ring-ring transition-colors duration-150 ease-in-out rounded-md text-xs px-2 py-1.5 text-left justify-start font-medium ${statusTriggerStyle}`}
+              >
+                <div className="flex items-center">
+                  <span className={`w-2 h-2 rounded-full mr-2 ${statusDotColor}`} />
+                  <SelectValue>{getStatusText(lead.status)}</SelectValue>
+                </div>
+              </SelectTrigger>
+              <SelectContent className="bg-card border-border text-foreground">
+                {LEAD_STATUSES.map((status) => (
+                  <SelectItem key={status.value} value={status.value}>
+                    <div className="flex items-center">
+                      <span className={`w-2 h-2 rounded-full mr-2 ${status.dotColor}`} />
+                      <span>{status.label}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
@@ -573,7 +661,7 @@ const LeadTable: React.FC<LeadTableProps> = ({
     }
 
     const shareText = selectedLeadData.map(lead => 
-      `📋 Lead: ${lead.name}\n💰 Budget: ${formatIndianCurrency(lead.numeric_budget)}\n📍 Location: ${lead.location}\n💒 Wedding: ${formatDate(lead.wedding_date)}\n📞 Contact: ${lead.number}\n`
+      `📋 Lead: ${lead.name}\n💰 Budget: ${formatIndianCurrency(lead.numeric_budget)}\n💒 Wedding: ${formatDate(lead.wedding_date)}\n📞 Contact: ${lead.number}\n`
     ).join('\n---\n');
 
     const finalText = `🎉 Wedding Leads Summary (${selectedLeadData.length} leads)\n\n${shareText}\n\n📱 Shared via Shaadiyaar Admin`;
@@ -795,7 +883,7 @@ const LeadTable: React.FC<LeadTableProps> = ({
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="font-medium text-foreground text-sm truncate">{lead.name}</div>
-                          <div className="text-xs text-muted-foreground truncate">{lead.location}</div>
+                          <div className="text-xs text-muted-foreground truncate">{lead.number}</div>
                         </div>
                       </div>
                       
@@ -871,7 +959,6 @@ const LeadTable: React.FC<LeadTableProps> = ({
               <SortableTableHeader columnKey="lead_type" title="Type" sortConfig={sortConfig} requestSort={requestSort} />
               <SortableTableHeader columnKey="wedding_date" title="Wedding Date" sortConfig={sortConfig} requestSort={requestSort} />
               <SortableTableHeader columnKey="numeric_budget" title="Budget" sortConfig={sortConfig} requestSort={requestSort} />
-              <SortableTableHeader columnKey="location" title="Location" sortConfig={sortConfig} requestSort={requestSort} />
               <SortableTableHeader columnKey="status" title="Status" sortConfig={sortConfig} requestSort={requestSort} />
               <th className="text-left py-3 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Actions</th>
             </tr>
@@ -935,12 +1022,6 @@ const LeadTable: React.FC<LeadTableProps> = ({
                   </td>
                   <td className="py-4 px-6">
                     <div className="font-medium text-foreground">{formatIndianCurrency(lead.numeric_budget)}</div>
-                  </td>
-                  <td className="py-4 px-6">
-                    <div className="flex items-center text-muted-foreground">
-                      <MapPin className="w-4 h-4 mr-1.5" />
-                      {lead.location}
-                    </div>
                   </td>
                   <td className="py-4 px-6">
                     <Select
@@ -1051,7 +1132,7 @@ const LeadTable: React.FC<LeadTableProps> = ({
                     <div className="font-medium text-foreground">{leadToDelete.name}</div>
                     <div className="text-sm text-muted-foreground">{leadToDelete.number}</div>
                     <div className="text-sm text-muted-foreground">
-                      {formatIndianCurrency(leadToDelete.numeric_budget)} • {leadToDelete.location}
+                      {formatIndianCurrency(leadToDelete.numeric_budget)} • {leadToDelete.number}
                     </div>
                   </div>
                 </div>
