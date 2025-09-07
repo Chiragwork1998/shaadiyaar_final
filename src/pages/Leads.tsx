@@ -1,7 +1,5 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Plus } from 'lucide-react';
-import { Button } from '../components/ui/Button';
 import LeadDetailsSheet from '../components/leads/LeadDetailsSheet';
 import LeadStats from '../components/dashboard/LeadStats';
 import LeadTable from '../components/dashboard/LeadTable';
@@ -18,7 +16,6 @@ interface SortConfig {
 
 const Leads = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
@@ -35,7 +32,6 @@ const Leads = () => {
   const loadLeads = async () => {
     try {
       console.log('Loading leads...');
-      setLoading(true);
       const data = await fetchLeads();
       console.log('Leads loaded:', data);
       setLeads(data);
@@ -43,8 +39,6 @@ const Leads = () => {
     } catch (error) {
       console.error('Error loading leads:', error);
       toast.error('Failed to load leads');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -181,7 +175,6 @@ const Leads = () => {
     const prevLeads = [...leads];
     const prevLead = leads.find(lead => lead.lead_id === leadId);
     if (!prevLead) return;
-    const prevStatus = prevLead.status;
 
     // Optimistically update UI
     setLeads(prevLeads =>
@@ -257,30 +250,28 @@ const Leads = () => {
   };
 
   return (
-    <div className="bg-background min-h-screen overflow-x-hidden">
-      <div className="w-full space-y-4 p-3 md:p-6 max-w-full overflow-x-hidden">
-        {/* Header Section - Compact for Mobile */}
+    <div className="bg-background min-h-screen">
+      <div className="w-full max-w-full px-3 py-4 md:px-6 md:py-6 space-y-4">
+        {/* Header Section - Mobile Optimized */}
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col gap-3 overflow-x-hidden"
+          className="w-full"
         >
-          <div className="overflow-x-hidden">
-            <h1 className="text-lg md:text-2xl font-semibold text-foreground">
-              Lead Management
-            </h1>
-            <p className="text-xs md:text-sm text-muted-foreground mt-1">
-              Manage and track all your wedding leads
-            </p>
-          </div>
+          <h1 className="text-xl md:text-2xl font-semibold text-foreground">
+            Lead Management
+          </h1>
+          <p className="text-sm md:text-base text-muted-foreground mt-1">
+            Manage and track all your wedding leads
+          </p>
         </motion.div>
 
-        {/* Stats Overview - Compact Grid */}
+        {/* Stats Overview - Mobile Optimized */}
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="overflow-x-hidden"
+          className="w-full"
         >
           <LeadStats {...stats} />
         </motion.div>
@@ -290,7 +281,7 @@ const Leads = () => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="overflow-x-hidden"
+          className="w-full"
         >
           <LeadTable
             leads={processedLeads}

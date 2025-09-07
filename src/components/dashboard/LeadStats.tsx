@@ -38,20 +38,20 @@ const StatCard: React.FC<{
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay }}
-      className="bg-card border border-border rounded-lg p-3 md:p-6 shadow-sm"
+      className="bg-card border border-border rounded-lg p-3 md:p-4 shadow-sm w-full"
     >
       <div className="flex items-center justify-between">
-        <div className="p-2 md:p-3 bg-primary rounded-lg shadow-md">
-          <Icon className="h-4 w-4 md:h-6 md:w-6 text-primary-foreground" />
+        <div className="p-2 bg-primary rounded-lg shadow-md">
+          <Icon className="h-4 w-4 md:h-5 md:w-5 text-primary-foreground" />
         </div>
         {trend && (
-          <span className={`text-xs md:text-sm font-medium ${trendColor} ${trendBgColor} px-2 py-1 md:px-3 md:py-1 rounded-full border border-transparent`}>
-            {TrendIcon && <TrendIcon className="inline h-3 w-3 md:h-4 md:w-4 mr-1" />} 
+          <span className={`text-xs font-medium ${trendColor} ${trendBgColor} px-2 py-1 rounded-full border border-transparent`}>
+            {TrendIcon && <TrendIcon className="inline h-3 w-3 mr-1" />} 
             {trend}
           </span>
         )}
       </div>
-      <h3 className="text-lg md:text-2xl font-semibold text-foreground mt-2 md:mt-4">{value}</h3>
+      <h3 className="text-lg md:text-xl font-semibold text-foreground mt-2">{value}</h3>
       <p className="text-muted-foreground text-xs md:text-sm mt-1">{title}</p>
     </motion.div>
   );
@@ -59,7 +59,7 @@ const StatCard: React.FC<{
 
 const LeadStats: React.FC<StatsProps> = ({ totalLeads, hotLeads, upcomingWeddings, conversionRate }) => {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 overflow-x-hidden">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 w-full">
       <StatCard 
         icon={Users} 
         title="Total Leads" 

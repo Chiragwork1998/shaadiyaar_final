@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Plus, ChevronDown, Phone, Star, Clock, MoreHorizontal, Share2, Pencil, ArrowUp, ArrowDown, Trash2, AlertTriangle, Check, X, Eye, Grid3X3, List, User, Mail, Calendar, DollarSign, Building } from 'lucide-react';
+import { Search, Plus, ChevronDown, Phone, Star, Clock, Share2, Pencil, ArrowUp, ArrowDown, Trash2, AlertTriangle, X, Eye, Grid3X3, List, User, Calendar, DollarSign, Building } from 'lucide-react';
 import { Button } from '../ui/Button';
 import {
   Select,
@@ -18,7 +18,7 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 import { Lead } from '../../types';
-import { formatCurrency, formatDate, LEAD_TYPES, getLeadTypeStyle, getStatusDotColor, getLeadStatusTriggerStyle, getStatusText, LEAD_STATUSES, formatIndianCurrency, MENU_OPTIONS } from '../../utils/helpers';
+import { formatDate, LEAD_TYPES, getLeadTypeStyle, getStatusDotColor, getLeadStatusTriggerStyle, getStatusText, LEAD_STATUSES, formatIndianCurrency, MENU_OPTIONS } from '../../utils/helpers';
 import { parseISO, differenceInDays } from 'date-fns';
 import { supabase } from '../../lib/supabase';
 import toast from 'react-hot-toast';
@@ -67,7 +67,7 @@ const AddLeadForm: React.FC<{
 
     setIsSubmitting(true);
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('leads')
         .insert([{
           name: formData.name,
@@ -595,11 +595,6 @@ const LeadTable: React.FC<LeadTableProps> = ({
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   const [showAddLeadForm, setShowAddLeadForm] = useState(false);
 
-  const handleDeleteClick = (lead: Lead, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setLeadToDelete(lead);
-    setDeleteDialogOpen(true);
-  };
 
   const handleDeleteConfirm = async () => {
     if (!leadToDelete) return;
@@ -684,34 +679,34 @@ const LeadTable: React.FC<LeadTableProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4 }}
-      className="bg-card rounded-xl border border-border shadow-sm overflow-hidden max-w-full"
+      className="bg-card rounded-xl border border-border shadow-sm overflow-hidden w-full"
     >
-      <div className="p-3 md:p-6 border-b border-border overflow-x-hidden">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 overflow-x-hidden">
-          <div className="flex items-center overflow-x-hidden">
+      <div className="p-3 md:p-4 border-b border-border">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+          <div className="flex items-center flex-wrap gap-2">
             <h2 className="text-base font-medium text-foreground">Recent Leads</h2>
-            <span className="ml-2 px-2 py-0.5 bg-accent text-primary text-xs font-medium rounded-full">
+            <span className="px-2 py-0.5 bg-accent text-primary text-xs font-medium rounded-full">
               {leads.length} total
             </span>
             {selectedLeads.size > 0 && (
-              <span className="ml-2 px-2 py-0.5 bg-primary text-primary-foreground text-xs font-medium rounded-full">
+              <span className="px-2 py-0.5 bg-primary text-primary-foreground text-xs font-medium rounded-full">
                 {selectedLeads.size} selected
               </span>
             )}
           </div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 overflow-x-hidden">
-            <div className="relative">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+            <div className="relative w-full sm:w-48">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <input
                 type="text"
                 placeholder="Search leads..."
                 value={searchQuery}
                 onChange={onSearchChange}
-                className="pl-10 pr-4 py-2 bg-background border border-input rounded-lg text-xs md:text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring w-full sm:w-48"
+                className="pl-10 pr-4 py-2 bg-background border border-input rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring w-full"
               />
             </div>
             <Select value={selectedLeadType} onValueChange={onLeadTypeChange}>
-              <SelectTrigger className="w-full sm:w-[140px] bg-background border-input text-foreground focus:ring-ring text-xs md:text-sm">
+              <SelectTrigger className="w-full sm:w-[140px] bg-background border-input text-foreground focus:ring-ring text-sm">
                 <SelectValue placeholder="Filter by type" />
               </SelectTrigger>
               <SelectContent className="bg-card border-border text-foreground">
@@ -752,9 +747,9 @@ const LeadTable: React.FC<LeadTableProps> = ({
               size="sm" 
               variant="primary" 
               onClick={() => setShowAddLeadForm(true)}
-              className="w-full sm:w-auto text-xs md:text-sm h-8 md:h-9"
+              className="w-full sm:w-auto text-sm h-9"
             >
-              <Plus className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+              <Plus className="w-4 h-4 mr-2" />
               Add Lead
             </Button>
           </div>
@@ -767,31 +762,31 @@ const LeadTable: React.FC<LeadTableProps> = ({
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
           exit={{ opacity: 0, height: 0 }}
-          className="bg-accent border-b border-border px-3 md:px-6 py-2 md:py-3"
+          className="bg-accent border-b border-border px-3 py-3"
         >
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center">
-              <span className="text-xs md:text-sm font-medium text-foreground">
+              <span className="text-sm font-medium text-foreground">
                 {selectedLeads.size} lead{selectedLeads.size !== 1 ? 's' : ''} selected
               </span>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleBulkShare}
-                className="text-theme-green hover:bg-theme-green-bg flex-1 sm:flex-none text-xs md:text-sm h-7 md:h-8"
+                className="text-theme-green hover:bg-theme-green-bg flex-1 sm:flex-none text-sm h-8"
               >
-                <Share2 className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+                <Share2 className="w-4 h-4 mr-2" />
                 Share on WhatsApp
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleClearSelection}
-                className="text-muted-foreground hover:text-foreground text-xs md:text-sm h-7 md:h-8"
+                className="text-muted-foreground hover:text-foreground text-sm h-8"
               >
-                <X className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
+                <X className="w-4 h-4 mr-2" />
                 Clear
               </Button>
             </div>
@@ -800,7 +795,7 @@ const LeadTable: React.FC<LeadTableProps> = ({
       )}
 
       {/* Mobile Views with Toggle */}
-      <div className="block lg:hidden overflow-x-hidden">
+      <div className="block lg:hidden">
         {/* Card View */}
         {viewMode === 'cards' && (
           <motion.div
@@ -808,7 +803,7 @@ const LeadTable: React.FC<LeadTableProps> = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
-            className="p-4 space-y-3 overflow-x-hidden"
+            className="p-4 space-y-3"
           >
             {leads.map((lead, index) => (
               <MobileLeadCard
@@ -847,9 +842,9 @@ const LeadTable: React.FC<LeadTableProps> = ({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
-            className="overflow-x-auto"
+            className="w-full"
           >
-            <div className="min-w-full">
+            <div className="w-full">
               {/* Table Header */}
               <div className="bg-muted/50 border-b border-border">
                 <div className="grid grid-cols-4 gap-2 p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -938,8 +933,9 @@ const LeadTable: React.FC<LeadTableProps> = ({
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden lg:block overflow-x-auto">
-        <table className="w-full">
+      <div className="hidden lg:block">
+        <div className="overflow-x-auto">
+          <table className="w-full">
           <thead>
             <tr className="bg-muted border-b border-border">
               <th className="text-left py-3 px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-12">
@@ -1088,7 +1084,8 @@ const LeadTable: React.FC<LeadTableProps> = ({
               );
             })}
           </tbody>
-        </table>
+          </table>
+        </div>
         {leads.length === 0 && (
           <div className="text-center py-12">
             <Search className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
