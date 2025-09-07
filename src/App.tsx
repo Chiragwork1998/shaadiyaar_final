@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import Dashboard from './pages/Dashboard';
@@ -20,6 +19,7 @@ import ExportData from './pages/ExportData';
 import Login from './pages/Login';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import InstallPrompt from './components/ui/InstallPrompt';
+import UpdateNotification from './components/ui/UpdateNotification';
 import './index.css';
 import { Toaster } from 'react-hot-toast';
 
@@ -28,6 +28,7 @@ function App() {
     <Router>
       <Toaster position="top-center" reverseOrder={false} />
       <InstallPrompt />
+      <UpdateNotification />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />

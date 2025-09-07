@@ -10,11 +10,14 @@ import {
   User,
   Shield,
   Key,
-  RefreshCw
+  RefreshCw,
+  Trash2,
+  Download
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthContext';
 import { changeUserPassword, resetToSharedPassword } from '../lib/supabase';
+import { serviceWorkerManager } from '../utils/serviceWorkerManager';
 import { toast } from 'react-hot-toast';
 
 const SettingsPage = () => {
@@ -26,7 +29,9 @@ const SettingsPage = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'password' | 'profile'>('password');
+  const [activeTab, setActiveTab] = useState<'password' | 'profile' | 'app'>('password');
+  const [isCheckingUpdates, setIsCheckingUpdates] = useState(false);
+  const [isClearingCache, setIsClearingCache] = useState(false);
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,7 +96,35 @@ const SettingsPage = () => {
       setLoading(false);
     }
   };
-  
+
+  const handleCheckForUpdates = async () => {
+    setIsCheckingUpdates(true);
+    try {
+      await serviceWorkerManager.checkForUpdates();
+      toast.success('Checking for updates...');
+    } catch (error) {
+      toast.error('Failed to check for updates');
+    } finally {
+      setIsCheckingUpdates(false);
+    }
+  };
+
+  const handleClearCache = async () => {
+    setIsClearingCache(true);
+    try {
+      await serviceWorkerManager.clearCache();
+      toast.success('Cache cleared successfully');
+    } catch (error) {
+      toast.error('Failed to clear cache');
+    } finally {
+      setIsClearingCache(false);
+    }
+  };
+
+  const handleForceRefresh = () => {
+    window.location.reload();
+  };
+
   return (
     <div className="bg-background min-h-screen overflow-x-hidden">
       <div className="w-full max-w-full space-y-4 p-3 md:p-6 overflow-x-hidden">
@@ -139,6 +172,17 @@ const SettingsPage = () => {
                 >
             <User className="w-4 h-4 inline mr-2" />
             Profile
+          </button>
+          <button
+            onClick={() => setActiveTab('app')}
+            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'app'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+                >
+            <Settings className="w-4 h-4 inline mr-2" />
+            App
           </button>
         </motion.div>
 
@@ -391,6 +435,102 @@ const SettingsPage = () => {
                 </div>
               </div>
           </div>
+          )}
+
+          {activeTab === 'app' && (
+            <div className="space-y-6">
+              {/* App Updates Section */}
+              <div className="bg-card rounded-lg border border-border p-4 md:p-6">
+                <div className="flex items-center mb-4">
+                  <Download className="w-5 h-5 text-green-500 mr-2" />
+                  <h2 className="text-lg font-semibold">App Updates</h2>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-start">
+                      <RefreshCw className="w-5 h-5 text-blue-500 mr-2 mt-0.5" />
+                      <div className="text-sm text-blue-800">
+                        <p className="font-medium">Automatic Updates</p>
+                        <p className="text-xs mt-1">
+                          The app automatically checks for updates every 30 seconds. You'll be notified when a new version is available.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button
+                      onClick={handleCheckForUpdates}
+                      disabled={isCheckingUpdates}
+                      className="flex-1"
+                    >
+                      {isCheckingUpdates ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                          Checking...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-4 h-4 mr-2" />
+                          Check for Updates
+                        </>
+                      )}
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      onClick={handleForceRefresh}
+                      className="flex-1"
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Force Refresh
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Cache Management Section */}
+              <div className="bg-card rounded-lg border border-border p-4 md:p-6">
+                <div className="flex items-center mb-4">
+                  <Trash2 className="w-5 h-5 text-orange-500 mr-2" />
+                  <h2 className="text-lg font-semibold">Cache Management</h2>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                    <div className="flex items-start">
+                      <AlertTriangle className="w-5 h-5 text-orange-500 mr-2 mt-0.5" />
+                      <div className="text-sm text-orange-800">
+                        <p className="font-medium">Clear Cache</p>
+                        <p className="text-xs mt-1">
+                          If you're experiencing issues or want to ensure you have the latest version, clear the app cache.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    onClick={handleClearCache}
+                    disabled={isClearingCache}
+                    className="w-full"
+                  >
+                    {isClearingCache ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Clearing Cache...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Clear App Cache
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
           )}
         </motion.div>
       </div>

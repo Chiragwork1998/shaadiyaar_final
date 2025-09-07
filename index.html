@@ -35,9 +35,20 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
+          navigator.serviceWorker.register('/sw.js', {
+            scope: '/',
+            updateViaCache: 'none' // Always check for updates
+          })
             .then((registration) => {
               console.log('SW registered: ', registration);
+              
+              // Check for updates immediately
+              registration.update();
+              
+              // Check for updates every 2 minutes (less aggressive)
+              setInterval(() => {
+                registration.update();
+              }, 120000);
             })
             .catch((registrationError) => {
               console.log('SW registration failed: ', registrationError);
