@@ -525,48 +525,43 @@ const MobileLeadCard: React.FC<{
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-center justify-between pt-2 border-t border-border">
-        <div className="flex items-center space-x-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onView(lead)}
-            className="text-blue-600 hover:bg-blue-50 hover:text-blue-700 h-8 px-3 text-xs"
-          >
-            <Eye className="w-3 h-3 mr-1" />
-            View
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onEdit(lead)}
-            className="text-primary hover:bg-primary/10 h-8 px-3 text-xs"
-          >
-            <Pencil className="w-3 h-3 mr-1" />
-            Edit
-          </Button>
-        </div>
-        
-        <div className="flex items-center space-x-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onShare(lead)}
-            className="text-green-600 hover:bg-green-50 hover:text-green-700 h-8 px-3 text-xs"
-          >
-            <Share2 className="w-3 h-3 mr-1" />
-            Share
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onDelete(lead)}
-            className="text-red-500 hover:bg-red-50 hover:text-red-600 h-8 px-3 text-xs"
-          >
-            <Trash2 className="w-3 h-3 mr-1" />
-            Delete
-          </Button>
-        </div>
+      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onView(lead)}
+          className="text-blue-600 hover:bg-blue-50 hover:text-blue-700 h-7 px-2 text-xs"
+        >
+          <Eye className="w-3 h-3 mr-1" />
+          View
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onEdit(lead)}
+          className="text-primary hover:bg-primary/10 h-7 px-2 text-xs"
+        >
+          <Pencil className="w-3 h-3 mr-1" />
+          Edit
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onShare(lead)}
+          className="text-green-600 hover:bg-green-50 hover:text-green-700 h-7 px-2 text-xs"
+        >
+          <Share2 className="w-3 h-3 mr-1" />
+          Share
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onDelete(lead)}
+          className="text-red-500 hover:bg-red-50 hover:text-red-600 h-7 px-2 text-xs"
+        >
+          <Trash2 className="w-3 h-3 mr-1" />
+          Delete
+        </Button>
       </div>
     </motion.div>
   );
@@ -694,64 +689,69 @@ const LeadTable: React.FC<LeadTableProps> = ({
               </span>
             )}
           </div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-            <div className="relative w-full sm:w-48">
+          <div className="flex flex-col gap-2">
+            {/* Search */}
+            <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <input
                 type="text"
                 placeholder="Search leads..."
                 value={searchQuery}
                 onChange={onSearchChange}
-                className="pl-10 pr-4 py-2 bg-background border border-input rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring w-full"
+                className="w-full pl-10 pr-4 py-2 border border-input rounded-lg text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
               />
             </div>
-            <Select value={selectedLeadType} onValueChange={onLeadTypeChange}>
-              <SelectTrigger className="w-full sm:w-[140px] bg-background border-input text-foreground focus:ring-ring text-sm">
-                <SelectValue placeholder="Filter by type" />
-              </SelectTrigger>
-              <SelectContent className="bg-card border-border text-foreground">
-                <SelectItem value="all">All Types</SelectItem>
-                {LEAD_TYPES.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            {/* View Toggle - Mobile Only */}
-            <div className="flex items-center lg:hidden">
-              <div className="flex bg-muted rounded-lg p-1">
-                <Button
-                  variant={viewMode === 'cards' ? 'primary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('cards')}
-                  className="h-7 px-2 text-xs"
-                >
-                  <Grid3X3 className="w-3 h-3 mr-1" />
-                  Cards
-                </Button>
-                <Button
-                  variant={viewMode === 'table' ? 'primary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('table')}
-                  className="h-7 px-2 text-xs"
-                >
-                  <List className="w-3 h-3 mr-1" />
-                  Table
-                </Button>
+
+            <div className="flex flex-col sm:flex-row gap-2">
+              {/* Type Filter */}
+              <Select value={selectedLeadType} onValueChange={onLeadTypeChange}>
+                <SelectTrigger className="w-full sm:w-[140px] text-xs md:text-sm">
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  {LEAD_TYPES.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {/* View Toggle - Mobile Only */}
+              <div className="flex items-center lg:hidden">
+                <div className="flex bg-muted rounded-lg p-1">
+                  <Button
+                    variant={viewMode === 'cards' ? 'primary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('cards')}
+                    className="h-7 px-2 text-xs"
+                  >
+                    <Grid3X3 className="w-3 h-3 mr-1" />
+                    Cards
+                  </Button>
+                  <Button
+                    variant={viewMode === 'table' ? 'primary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setViewMode('table')}
+                    className="h-7 px-2 text-xs"
+                  >
+                    <List className="w-3 h-3 mr-1" />
+                    Table
+                  </Button>
+                </div>
               </div>
+              
+              <Button 
+                size="sm" 
+                variant="primary" 
+                onClick={() => setShowAddLeadForm(true)}
+                className="w-full sm:w-auto text-sm h-8"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Lead
+              </Button>
             </div>
-            
-            <Button 
-              size="sm" 
-              variant="primary" 
-              onClick={() => setShowAddLeadForm(true)}
-              className="w-full sm:w-auto text-sm h-9"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Lead
-            </Button>
           </div>
         </div>
       </div>
@@ -847,9 +847,8 @@ const LeadTable: React.FC<LeadTableProps> = ({
             <div className="w-full">
               {/* Table Header */}
               <div className="bg-muted/50 border-b border-border">
-                <div className="grid grid-cols-4 gap-2 p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                <div className="grid grid-cols-3 gap-2 p-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   <div className="col-span-2">Lead</div>
-                  <div>Budget</div>
                   <div>Status</div>
                 </div>
               </div>
@@ -864,7 +863,7 @@ const LeadTable: React.FC<LeadTableProps> = ({
                     transition={{ duration: 0.2, delay: index * 0.05 }}
                     className="bg-card hover:bg-accent/50 transition-colors"
                   >
-                    <div className="grid grid-cols-4 gap-2 p-3 items-center">
+                    <div className="grid grid-cols-3 gap-2 p-3 items-center">
                       {/* Lead Info */}
                       <div className="col-span-2 flex items-center space-x-3">
                         <input
@@ -880,11 +879,6 @@ const LeadTable: React.FC<LeadTableProps> = ({
                           <div className="font-medium text-foreground text-sm truncate">{lead.name}</div>
                           <div className="text-xs text-muted-foreground truncate">{lead.number}</div>
                         </div>
-                      </div>
-                      
-                      {/* Budget */}
-                      <div className="text-sm font-medium text-foreground">
-                        {formatIndianCurrency(lead.numeric_budget)}
                       </div>
                       
                       {/* Status */}

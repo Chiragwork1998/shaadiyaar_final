@@ -251,37 +251,39 @@ const Leads = () => {
 
   return (
     <div className="bg-background min-h-screen">
-      <div className="w-full max-w-full px-3 py-4 md:px-6 md:py-6 space-y-4">
-        {/* Header Section - Mobile Optimized */}
+      <div className="w-full space-y-4 p-3 md:p-6">
+        {/* Header Section */}
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full"
+          className="flex flex-col gap-3"
         >
-          <h1 className="text-xl md:text-2xl font-semibold text-foreground">
-            Lead Management
-          </h1>
-          <p className="text-sm md:text-base text-muted-foreground mt-1">
-            Manage and track all your wedding leads
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h1 className="text-base md:text-lg lg:text-2xl font-semibold text-foreground">
+                Lead Management
+              </h1>
+              <p className="text-xs md:text-sm text-muted-foreground mt-1">
+                Manage and track all your wedding leads
+              </p>
+            </div>
+          </div>
         </motion.div>
 
-        {/* Stats Overview - Mobile Optimized */}
+        {/* Stats Overview */}
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="w-full"
         >
           <LeadStats {...stats} />
         </motion.div>
 
-        {/* Lead Table - Mobile Optimized */}
+        {/* Lead Table */}
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="w-full"
         >
           <LeadTable
             leads={processedLeads}
