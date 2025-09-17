@@ -204,6 +204,8 @@ export interface Booking {
   // Payment Details
   payment_mode?: string; // cash, bank_transfer, upi, other
   payment_mode_other?: string; // Custom text when "other" is selected
+  miscellaneous_payments?: number; // Miscellaneous payments amount
+  other_payments?: number; // Other payments amount
   
   // Additional Details
   btr?: string; // BTR field

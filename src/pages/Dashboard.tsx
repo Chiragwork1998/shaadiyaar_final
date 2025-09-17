@@ -398,12 +398,18 @@ const AddBookingForm: React.FC<{
     advance_paid: '',
     balance_amount: '',
     
+    // Payment Details
+    payment_mode: '',
+    payment_mode_other: '',
+    miscellaneous_payments: '',
+    other_payments: '',
+    
     // Additional Details
     btr: '',
     remarks: '',
     
     // Status
-    status: 'pending'
+    status: 'confirmed'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -504,6 +510,10 @@ const AddBookingForm: React.FC<{
         total_amount: parseFloat(formData.total_amount) || 0,
         advance_paid: parseFloat(formData.advance_paid) || 0,
         balance_amount: parseFloat(formData.balance_amount) || 0,
+        payment_mode: formData.payment_mode,
+        payment_mode_other: formData.payment_mode_other,
+        miscellaneous_payments: parseFloat(formData.miscellaneous_payments) || 0,
+        other_payments: parseFloat(formData.other_payments) || 0,
         btr: formData.btr,
         remarks: formData.remarks,
         status: status
@@ -548,9 +558,13 @@ const AddBookingForm: React.FC<{
           total_amount: '',
           advance_paid: '',
           balance_amount: '',
+          payment_mode: '',
+          payment_mode_other: '',
+          miscellaneous_payments: '',
+          other_payments: '',
           btr: '',
           remarks: '',
-          status: 'pending'
+          status: 'confirmed'
         });
         onClose();
         onBookingAdded();
@@ -597,9 +611,13 @@ const AddBookingForm: React.FC<{
         total_amount: '',
         advance_paid: '',
         balance_amount: '',
+        payment_mode: '',
+        payment_mode_other: '',
+        miscellaneous_payments: '',
+        other_payments: '',
         btr: '',
         remarks: '',
-        status: 'pending'
+        status: 'confirmed'
       });
       onClose();
       onBookingAdded();
@@ -918,7 +936,9 @@ const AddBookingForm: React.FC<{
           {/* Financial Details */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-foreground">Financial Details</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            {/* Basic Amounts */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label className="text-sm font-medium text-foreground">Amount</label>
                 <input
@@ -931,7 +951,7 @@ const AddBookingForm: React.FC<{
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-foreground">Tax</label>
+                <label className="text-sm font-medium text-foreground">Tax Amount</label>
                 <input
                   type="number"
                   value={formData.tax_amount}
@@ -939,6 +959,7 @@ const AddBookingForm: React.FC<{
                   className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
                   placeholder="0.00"
                   step="0.01"
+                  min="0"
                 />
               </div>
               <div>
@@ -962,6 +983,10 @@ const AddBookingForm: React.FC<{
                   placeholder="0.00"
                 />
               </div>
+            </div>
+
+            {/* Payment Details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <label className="text-sm font-medium text-foreground">Advance</label>
                 <input
@@ -973,6 +998,24 @@ const AddBookingForm: React.FC<{
                   step="0.01"
                 />
               </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Mode of Payment
+                </label>
+                <select
+                  value={formData.payment_mode}
+                  onChange={(e) => handleInputChange('payment_mode', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                >
+                  <option value="">Select payment mode</option>
+                  <option value="cash">Cash</option>
+                  <option value="bank_transfer">Bank Transfer</option>
+                  <option value="upi">UPI</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
               <div>
                 <label className="text-sm font-medium text-foreground">Balance</label>
                 <input
@@ -984,6 +1027,53 @@ const AddBookingForm: React.FC<{
                 />
               </div>
             </div>
+
+            {/* Additional Payment Fields */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Miscellaneous Payments
+                </label>
+                <input
+                  type="number"
+                  value={formData.miscellaneous_payments}
+                  onChange={(e) => handleInputChange('miscellaneous_payments', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  placeholder="0.00"
+                  step="0.01"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Others
+                </label>
+                <input
+                  type="number"
+                  value={formData.other_payments}
+                  onChange={(e) => handleInputChange('other_payments', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  placeholder="0.00"
+                  step="0.01"
+                />
+              </div>
+            </div>
+
+            {/* Payment Mode Other Field */}
+            {formData.payment_mode === 'other' && (
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Specify Payment Mode
+                </label>
+                <input
+                  type="text"
+                  value={formData.payment_mode_other}
+                  onChange={(e) => handleInputChange('payment_mode_other', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  placeholder="Enter payment mode details"
+                />
+              </div>
+            )}
           </div>
 
           {/* Additional Details */}

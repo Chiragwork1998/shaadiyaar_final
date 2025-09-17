@@ -48,6 +48,8 @@ const AddBookingForm: React.FC<AddBookingFormProps> = ({
     balance_amount: '',
     payment_mode: '',
     payment_mode_other: '',
+    miscellaneous_payments: '',
+    other_payments: '',
     status: 'confirmed'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -108,6 +110,8 @@ const AddBookingForm: React.FC<AddBookingFormProps> = ({
         balance_amount: parseFloat(formData.balance_amount) || 0,
         payment_mode: formData.payment_mode,
         payment_mode_other: formData.payment_mode_other,
+        miscellaneous_payments: parseFloat(formData.miscellaneous_payments) || 0,
+        other_payments: parseFloat(formData.other_payments) || 0,
         status: formData.status,
         booking_date: new Date().toISOString(),
         created_at: new Date().toISOString()
@@ -145,6 +149,8 @@ const AddBookingForm: React.FC<AddBookingFormProps> = ({
         balance_amount: '',
         payment_mode: '',
         payment_mode_other: '',
+        miscellaneous_payments: '',
+        other_payments: '',
         status: 'confirmed'
       });
     } catch (error) {
@@ -494,6 +500,36 @@ const AddBookingForm: React.FC<AddBookingFormProps> = ({
                   />
                 </div>
               )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-foreground">
+                    Miscellaneous Payments
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.miscellaneous_payments}
+                    onChange={(e) => handleInputChange('miscellaneous_payments', e.target.value)}
+                    className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                    placeholder="0.00"
+                    step="0.01"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-foreground">
+                    Others
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.other_payments}
+                    onChange={(e) => handleInputChange('other_payments', e.target.value)}
+                    className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                    placeholder="0.00"
+                    step="0.01"
+                  />
+                </div>
+              </div>
 
               <div>
                 <label className="text-sm font-medium text-foreground">
