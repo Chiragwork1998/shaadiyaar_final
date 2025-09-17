@@ -372,7 +372,7 @@ const AddBookingForm: React.FC<{
     date_of_function: '',
     occasion: 'Wedding',
     custom_occasion_details: '',
-    hall: 'Main Hall',
+    hall: 'Ground',
     meal_type: 'Dinner',
     timings_from: '',
     timings_to: '',
@@ -418,7 +418,7 @@ const AddBookingForm: React.FC<{
     if (isOpen) {
       const generateSerial = async () => {
         try {
-          const nextSerial = await generateSequentialSerialNumber();
+          const nextSerial = await generateSequentialSerialNumber(formData.unit);
           setFormData(prev => ({ 
             ...prev, 
             serial_no: nextSerial,
@@ -437,7 +437,7 @@ const AddBookingForm: React.FC<{
       };
       generateSerial();
     }
-  }, [isOpen]);
+  }, [isOpen, formData.unit]);
 
   const handleInputChange = (field: string, value: string | boolean | number) => {
     setFormData(prev => {

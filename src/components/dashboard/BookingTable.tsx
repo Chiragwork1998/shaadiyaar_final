@@ -1660,7 +1660,7 @@ const AddBookingForm: React.FC<{
     date_of_function: '',
     occasion: 'Wedding',
     custom_occasion_details: '',
-    hall: 'Main Hall',
+    hall: 'Ground',
     meal_type: 'Dinner',
     timings_from: '',
     timings_to: '',
