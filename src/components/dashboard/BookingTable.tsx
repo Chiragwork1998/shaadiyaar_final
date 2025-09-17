@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Plus, ChevronDown, Phone, Calendar, DollarSign, MapPin, MoreHorizontal, Share2, Pencil, ArrowUp, ArrowDown, Trash2, AlertTriangle, Check, X, Eye, Grid3X3, List, User, Mail, Clock, Building, Printer, CreditCard, ShieldCheck, FileText, Tag, Settings, Loader2 } from 'lucide-react';
+import { Search, Plus, ChevronDown, Phone, Calendar, DollarSign, MapPin, MoreHorizontal, Share2, Pencil, ArrowUp, ArrowDown, Trash2, AlertTriangle, X, Eye, Grid3X3, List, User, Mail, Clock, Building, Printer, CreditCard, ShieldCheck, FileText, Tag, Settings, Loader2 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import {
   Dialog,
@@ -400,12 +400,16 @@ const EditBookingForm: React.FC<{
     advance_paid: '',
     balance_amount: '',
     
+    // Payment Details
+    payment_mode: '',
+    payment_mode_other: '',
+    
     // Additional Details
     btr: '',
     remarks: '',
     
     // Status
-    status: 'pending'
+    status: 'confirmed'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -452,6 +456,10 @@ const EditBookingForm: React.FC<{
         total_amount: booking.total_amount?.toString() || booking.net_amount?.toString() || '',
         advance_paid: booking.advance_paid?.toString() || '',
         balance_amount: booking.balance_amount?.toString() || '',
+        
+        // Payment Details
+        payment_mode: booking.payment_mode || '',
+        payment_mode_other: booking.payment_mode_other || '',
         
         // Additional Details
         btr: booking.btr || '',
@@ -535,12 +543,20 @@ const EditBookingForm: React.FC<{
         total_amount: parseFloat(formData.total_amount) || 0,
         advance_paid: parseFloat(formData.advance_paid) || 0,
         balance_amount: parseFloat(formData.balance_amount) || 0,
+        payment_mode: formData.payment_mode,
+        payment_mode_other: formData.payment_mode_other,
         btr: formData.btr,
         remarks: formData.remarks,
         status: formData.status
       };
 
       // Validate booking data before submission
+      if (isNaN(bookingData.tax_amount) || bookingData.tax_amount < 0) {
+        console.error('Invalid tax_amount value:', formData.tax_amount);
+        toast.error('Invalid tax amount');
+        return;
+      }
+
       if (isNaN(bookingData.advance_paid) || bookingData.advance_paid < 0) {
         console.error('Invalid advance_paid value:', formData.advance_paid);
         toast.error('Invalid advance payment amount');
@@ -990,14 +1006,16 @@ const EditBookingForm: React.FC<{
 
               <div>
                 <label className="text-sm font-medium text-foreground">
-                  Tax
+                  Tax Amount
                 </label>
                 <input
                   type="number"
                   value={formData.tax_amount}
                   onChange={(e) => handleInputChange('tax_amount', e.target.value)}
                   className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
-                  placeholder="Enter tax amount"
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0"
                 />
               </div>
 
@@ -1027,18 +1045,52 @@ const EditBookingForm: React.FC<{
                 />
               </div>
 
-              <div>
-                <label className="text-sm font-medium text-foreground">
-                  Advance Paid
-                </label>
-                <input
-                  type="number"
-                  value={formData.advance_paid}
-                  onChange={(e) => handleInputChange('advance_paid', e.target.value)}
-                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
-                  placeholder="Enter advance amount"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-foreground">
+                    Advance Paid
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.advance_paid}
+                    onChange={(e) => handleInputChange('advance_paid', e.target.value)}
+                    className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                    placeholder="Enter advance amount"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-foreground">
+                    Mode of Payment
+                  </label>
+                  <select
+                    value={formData.payment_mode}
+                    onChange={(e) => handleInputChange('payment_mode', e.target.value)}
+                    className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  >
+                    <option value="">Select payment mode</option>
+                    <option value="cash">Cash</option>
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="upi">UPI</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
               </div>
+
+              {formData.payment_mode === 'other' && (
+                <div>
+                  <label className="text-sm font-medium text-foreground">
+                    Specify Payment Mode
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.payment_mode_other}
+                    onChange={(e) => handleInputChange('payment_mode_other', e.target.value)}
+                    className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                    placeholder="Enter payment mode details"
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="text-sm font-medium text-foreground">
@@ -1157,33 +1209,36 @@ const printBooking = (booking: Booking, partPayments: any[]) => {
       <title>ROUGH ESTIMATE - ${booking.serial_no}</title>
       <style>
         @media print {
-          body { margin: 0; padding: 15px; }
+          body { margin: 0; padding: 10px; }
           .no-print { display: none !important; }
           .action-buttons { display: none !important; }
           .btn { display: none !important; }
+          .page-break { page-break-inside: avoid; }
+          * { page-break-inside: avoid; }
+          .estimate-content { page-break-inside: avoid; }
         }
         body { 
           font-family: Arial, sans-serif; 
           margin: 0; 
-          padding: 15px; 
+          padding: 10px; 
           font-size: 12px;
-          line-height: 1.4;
+          line-height: 1.3;
         }
         .header { 
           text-align: center; 
-          margin-bottom: 20px; 
+          margin-bottom: 10px; 
           border: 1px solid #000;
-          padding: 10px;
+          padding: 8px;
           display: flex;
           justify-content: space-between;
           align-items: center;
         }
         .title { 
-          font-size: 18px; 
+          font-size: 16px; 
           font-weight: bold; 
           text-transform: uppercase;
           border: 1px solid #000;
-          padding: 5px 15px;
+          padding: 4px 12px;
         }
         .unit { 
           font-size: 14px; 
@@ -1206,26 +1261,27 @@ const printBooking = (booking: Booking, partPayments: any[]) => {
         }
         .main-section {
           border: 1px solid #000;
-          padding: 15px;
-          margin-bottom: 15px;
+          padding: 10px;
+          margin-bottom: 10px;
         }
         .two-column {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 20px;
+          gap: 12px;
         }
         .field-group {
-          margin-bottom: 15px;
+          margin-bottom: 8px;
         }
         .field-row {
           display: flex;
           align-items: center;
-          margin-bottom: 8px;
-          gap: 10px;
+          margin-bottom: 4px;
+          gap: 8px;
         }
         .field-label {
           font-weight: bold;
-          min-width: 80px;
+          min-width: 75px;
+          font-size: 11px;
         }
         .field-input {
           border: none;
@@ -1244,13 +1300,13 @@ const printBooking = (booking: Booking, partPayments: any[]) => {
         .btr-remarks {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 15px;
-          margin: 15px 0;
+          gap: 10px;
+          margin: 10px 0;
         }
         .btr-box, .remarks-box {
           border: 1px solid #000;
-          padding: 10px;
-          min-height: 80px;
+          padding: 8px;
+          min-height: 50px;
           position: relative;
         }
         .btr-box::before {
@@ -1271,61 +1327,65 @@ const printBooking = (booking: Booking, partPayments: any[]) => {
         }
         .terms-section {
           border: 1px solid #000;
-          padding: 10px;
-          margin: 15px 0;
+          padding: 8px;
+          margin: 8px 0;
         }
         .terms-title {
           font-weight: bold;
-          margin-bottom: 10px;
+          margin-bottom: 6px;
           text-transform: uppercase;
+          font-size: 11px;
         }
         .terms-list {
           list-style: decimal;
-          padding-left: 20px;
+          padding-left: 18px;
           margin: 0;
         }
         .terms-list li {
-          margin-bottom: 5px;
-          font-size: 11px;
+          margin-bottom: 3px;
+          font-size: 10px;
+          line-height: 1.2;
         }
         .payment-section {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 20px;
-          margin-top: 15px;
+          gap: 15px;
+          margin-top: 10px;
         }
         .financial-details {
           border: 1px solid #000;
-          padding: 10px;
+          padding: 8px;
         }
         .financial-row {
           display: flex;
           justify-content: space-between;
-          margin-bottom: 5px;
+          margin-bottom: 4px;
           font-size: 11px;
         }
         .payment-schedule {
           border: 1px solid #000;
-          padding: 10px;
+          padding: 8px;
         }
         .schedule-title {
           font-weight: bold;
-          margin-bottom: 10px;
+          margin-bottom: 6px;
           text-transform: uppercase;
+          font-size: 11px;
         }
         .schedule-list {
           list-style: decimal;
-          padding-left: 20px;
+          padding-left: 18px;
           margin: 0;
         }
         .schedule-list li {
-          margin-bottom: 5px;
-          font-size: 11px;
+          margin-bottom: 3px;
+          font-size: 10px;
+          line-height: 1.2;
         }
         .signature-section {
           display: flex;
           justify-content: space-between;
-          margin-top: 20px;
+          margin-top: 12px;
           font-size: 11px;
           font-weight: bold;
         }
@@ -1383,6 +1443,7 @@ const printBooking = (booking: Booking, partPayments: any[]) => {
         </button>
       </div>
       
+      <div class="estimate-content">
       <div class="header">
         <div class="title">ROUGH ESTIMATE</div>
         <div class="unit">UNIT-2</div>
@@ -1520,6 +1581,12 @@ const printBooking = (booking: Booking, partPayments: any[]) => {
             <span>ADVANCE</span>
             <span>₹${booking.advance_paid || 0}</span>
           </div>
+          ${booking.advance_paid > 0 && booking.payment_mode ? `
+          <div class="financial-row">
+            <span>PAYMENT MODE</span>
+            <span>${booking.payment_mode === 'other' ? (booking.payment_mode_other || 'Other') : booking.payment_mode.toUpperCase()}</span>
+          </div>
+          ` : ''}
           <div class="financial-row">
             <span>BALANCE</span>
             <span>₹${actualBalance}</span>
@@ -1543,6 +1610,7 @@ const printBooking = (booking: Booking, partPayments: any[]) => {
       <div class="signature-section">
         <div>HOST SIGNATURE</div>
         <div>MANAGER</div>
+      </div>
       </div>
     </body>
     </html>
@@ -1600,12 +1668,16 @@ const AddBookingForm: React.FC<{
     advance_paid: '',
     balance_amount: '',
     
+    // Payment Details
+    payment_mode: '',
+    payment_mode_other: '',
+    
     // Additional Details
     btr: '',
     remarks: '',
     
     // Status
-    status: 'pending'
+    status: 'confirmed'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -1614,7 +1686,7 @@ const AddBookingForm: React.FC<{
     if (isOpen) {
       const generateSerial = async () => {
         try {
-          const nextSerial = await generateSequentialSerialNumber();
+          const nextSerial = await generateSequentialSerialNumber(formData.unit);
           setFormData(prev => ({ 
             ...prev, 
             serial_no: nextSerial,
@@ -1633,7 +1705,7 @@ const AddBookingForm: React.FC<{
       };
       generateSerial();
     }
-  }, [isOpen]);
+  }, [isOpen, formData.unit]);
 
   const handleInputChange = (field: string, value: string | boolean | number) => {
     setFormData(prev => {
@@ -1681,7 +1753,7 @@ const AddBookingForm: React.FC<{
     setIsSubmitting(true);
     try {
       // Determine status based on user permissions
-      const status = user && requiresApproval(user.access_code as any) ? 'pending_approval' : 'confirmed';
+      const status = 'confirmed';
       
       const bookingData = {
         serial_no: formData.serial_no,
@@ -1713,6 +1785,8 @@ const AddBookingForm: React.FC<{
         total_amount: parseFloat(formData.total_amount) || 0,
         advance_paid: parseFloat(formData.advance_paid) || 0,
         balance_amount: parseFloat(formData.balance_amount) || 0,
+        payment_mode: formData.payment_mode,
+        payment_mode_other: formData.payment_mode_other,
         btr: formData.btr,
         remarks: formData.remarks,
         status: status,
@@ -1720,6 +1794,12 @@ const AddBookingForm: React.FC<{
       };
 
       // Validate booking data before submission
+      if (isNaN(bookingData.tax_amount) || bookingData.tax_amount < 0) {
+        console.error('Invalid tax_amount value:', formData.tax_amount);
+        toast.error('Invalid tax amount');
+        return;
+      }
+
       if (isNaN(bookingData.advance_paid) || bookingData.advance_paid < 0) {
         console.error('Invalid advance_paid value:', formData.advance_paid);
         toast.error('Invalid advance payment amount');
@@ -1748,7 +1828,7 @@ const AddBookingForm: React.FC<{
           admin_id: user.admin_id,
           action_type: 'booking',
           action_data: bookingData,
-          status: 'pending'
+          status: 'confirmed'
         });
 
         toast.success('Booking submitted for approval!');
@@ -1793,9 +1873,11 @@ const AddBookingForm: React.FC<{
           total_amount: '',
           advance_paid: '',
           balance_amount: '',
+          payment_mode: '',
+          payment_mode_other: '',
           btr: '',
           remarks: '',
-          status: 'pending'
+          status: 'confirmed'
         });
         onClose();
         return;
@@ -1842,9 +1924,11 @@ const AddBookingForm: React.FC<{
         total_amount: '',
         advance_paid: '',
         balance_amount: '',
+        payment_mode: '',
+        payment_mode_other: '',
         btr: '',
         remarks: '',
-        status: 'pending'
+        status: 'confirmed'
       });
       onClose();
       // Don't call onBookingAdded here since real-time will handle it
@@ -2176,7 +2260,7 @@ const AddBookingForm: React.FC<{
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-foreground">Tax</label>
+                <label className="text-sm font-medium text-foreground">Tax Amount</label>
                 <input
                   type="number"
                   value={formData.tax_amount}
@@ -2184,6 +2268,7 @@ const AddBookingForm: React.FC<{
                   className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
                   placeholder="0.00"
                   step="0.01"
+                  min="0"
                 />
               </div>
               <div>
@@ -2207,17 +2292,51 @@ const AddBookingForm: React.FC<{
                   placeholder="0.00"
                 />
               </div>
-              <div>
-                <label className="text-sm font-medium text-foreground">Advance</label>
-                <input
-                  type="number"
-                  value={formData.advance_paid}
-                  onChange={(e) => handleInputChange('advance_paid', e.target.value)}
-                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
-                  placeholder="0.00"
-                  step="0.01"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-foreground">Advance</label>
+                  <input
+                    type="number"
+                    value={formData.advance_paid}
+                    onChange={(e) => handleInputChange('advance_paid', e.target.value)}
+                    className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                    placeholder="0.00"
+                    step="0.01"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-foreground">
+                    Mode of Payment
+                  </label>
+                  <select
+                    value={formData.payment_mode}
+                    onChange={(e) => handleInputChange('payment_mode', e.target.value)}
+                    className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  >
+                    <option value="">Select payment mode</option>
+                    <option value="cash">Cash</option>
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="upi">UPI</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
               </div>
+
+              {formData.payment_mode === 'other' && (
+                <div>
+                  <label className="text-sm font-medium text-foreground">
+                    Specify Payment Mode
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.payment_mode_other}
+                    onChange={(e) => handleInputChange('payment_mode_other', e.target.value)}
+                    className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                    placeholder="Enter payment mode details"
+                  />
+                </div>
+              )}
               <div>
                 <label className="text-sm font-medium text-foreground">Balance</label>
                 <input
@@ -2415,9 +2534,7 @@ const MobileBookingCard: React.FC<{
             >
               {updatingStatus === booking.booking_id.toString() ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
-              ) : (
-                <Check className="w-3 h-3" />
-              )}
+              ) : null}
               Approve
             </Button>
           )}
@@ -2865,9 +2982,7 @@ const BookingTable: React.FC<BookingTableProps> = ({
                         >
                           {updatingStatus === booking.booking_id.toString() ? (
                             <Loader2 className="w-3 h-3 animate-spin" />
-                          ) : (
-                            <Check className="w-3 h-3" />
-                          )}
+                          ) : null}
                           Approve
                         </Button>
                       )}

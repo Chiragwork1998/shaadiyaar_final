@@ -46,6 +46,8 @@ const AddBookingForm: React.FC<AddBookingFormProps> = ({
     net_amount: '',
     advance_paid: '',
     balance_amount: '',
+    payment_mode: '',
+    payment_mode_other: '',
     status: 'confirmed'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -104,6 +106,8 @@ const AddBookingForm: React.FC<AddBookingFormProps> = ({
         net_amount: parseFloat(formData.net_amount) || 0,
         advance_paid: parseFloat(formData.advance_paid) || 0,
         balance_amount: parseFloat(formData.balance_amount) || 0,
+        payment_mode: formData.payment_mode,
+        payment_mode_other: formData.payment_mode_other,
         status: formData.status,
         booking_date: new Date().toISOString(),
         created_at: new Date().toISOString()
@@ -139,6 +143,8 @@ const AddBookingForm: React.FC<AddBookingFormProps> = ({
         net_amount: '',
         advance_paid: '',
         balance_amount: '',
+        payment_mode: '',
+        payment_mode_other: '',
         status: 'confirmed'
       });
     } catch (error) {
@@ -442,18 +448,52 @@ const AddBookingForm: React.FC<AddBookingFormProps> = ({
                 />
               </div>
 
-              <div>
-                <label className="text-sm font-medium text-foreground">
-                  Advance
-                </label>
-                <input
-                  type="number"
-                  value={formData.advance_paid}
-                  onChange={(e) => handleInputChange('advance_paid', e.target.value)}
-                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
-                  placeholder="Enter advance amount"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-foreground">
+                    Advance
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.advance_paid}
+                    onChange={(e) => handleInputChange('advance_paid', e.target.value)}
+                    className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                    placeholder="Enter advance amount"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-foreground">
+                    Mode of Payment
+                  </label>
+                  <select
+                    value={formData.payment_mode}
+                    onChange={(e) => handleInputChange('payment_mode', e.target.value)}
+                    className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  >
+                    <option value="">Select payment mode</option>
+                    <option value="cash">Cash</option>
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="upi">UPI</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
               </div>
+
+              {formData.payment_mode === 'other' && (
+                <div>
+                  <label className="text-sm font-medium text-foreground">
+                    Specify Payment Mode
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.payment_mode_other}
+                    onChange={(e) => handleInputChange('payment_mode_other', e.target.value)}
+                    className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                    placeholder="Enter payment mode details"
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="text-sm font-medium text-foreground">

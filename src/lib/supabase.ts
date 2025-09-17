@@ -881,12 +881,12 @@ export const getBooking = async (bookingId: number) => {
   }
 };
 
-// Function to get the next sequential serial number
-export const getNextSerialNumber = async (): Promise<string> => {
+// Function to get the next unit-specific serial number for bookings
+export const getNextSerialNumber = async (unit: string): Promise<string> => {
   try {
-    // Get all bookings and pending approvals to find the highest serial number
+    // Get all bookings and pending approvals for the specific unit to find the highest serial number
     const [bookingsResponse, pendingResponse] = await Promise.all([
-      supabase.from('bookings').select('serial_no').order('serial_no', { ascending: false }).limit(1),
+      supabase.from('bookings').select('serial_no').eq('unit', unit).order('serial_no', { ascending: false }).limit(1),
       supabase.from('pending_approvals').select('action_data').eq('action_type', 'booking').eq('status', 'pending')
     ]);
 
@@ -902,10 +902,11 @@ export const getNextSerialNumber = async (): Promise<string> => {
 
     let highestNumber = 0;
 
-    // Check approved bookings
+    // Check approved bookings for this unit
     if (bookingsResponse.data && bookingsResponse.data.length > 0) {
       const latestBooking = bookingsResponse.data[0];
       if (latestBooking.serial_no) {
+        // Extract O prefix and number (e.g., "O5" -> 5)
         const match = latestBooking.serial_no.match(/^O(\d+)$/);
         if (match) {
           highestNumber = Math.max(highestNumber, parseInt(match[1]));
@@ -913,10 +914,10 @@ export const getNextSerialNumber = async (): Promise<string> => {
       }
     }
 
-    // Check pending approvals
+    // Check pending approvals for this unit
     if (pendingResponse.data && pendingResponse.data.length > 0) {
       pendingResponse.data.forEach(approval => {
-        if (approval.action_data && approval.action_data.serial_no) {
+        if (approval.action_data && approval.action_data.serial_no && approval.action_data.unit === unit) {
           const match = approval.action_data.serial_no.match(/^O(\d+)$/);
           if (match) {
             highestNumber = Math.max(highestNumber, parseInt(match[1]));
@@ -931,7 +932,7 @@ export const getNextSerialNumber = async (): Promise<string> => {
     // Format as O1, O2, O3, etc. (without leading zeros)
     const serialNumber = `O${nextNumber}`;
 
-    console.log(`Generated next serial number: ${serialNumber} (from highest: ${highestNumber})`);
+    console.log(`Generated next serial number for ${unit}: ${serialNumber} (from highest: ${highestNumber})`);
     return serialNumber;
   } catch (error) {
     console.error('Error generating next serial number:', error);
@@ -940,6 +941,7 @@ export const getNextSerialNumber = async (): Promise<string> => {
     return `O${randomNum}`;
   }
 };
+
 
 // Part Payment functions
 export const fetchPartPayments = async () => {

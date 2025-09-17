@@ -201,6 +201,10 @@ export interface Booking {
   advance_paid: number;
   balance_amount: number;
   
+  // Payment Details
+  payment_mode?: string; // cash, bank_transfer, upi, other
+  payment_mode_other?: string; // Custom text when "other" is selected
+  
   // Additional Details
   btr?: string; // BTR field
   remarks?: string;

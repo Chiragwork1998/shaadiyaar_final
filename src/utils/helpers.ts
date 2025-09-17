@@ -167,19 +167,13 @@ export const MENU_PREFERENCES = [
 ] as const;
 
 export const BOOKING_STATUSES = [
-  { value: 'pending_approval', label: 'Pending Approval', dotColor: 'bg-orange-400', triggerStyle: 'bg-orange-400/10 text-orange-700 hover:bg-orange-400/20' },
-  { value: 'pending', label: 'Pending', dotColor: 'bg-yellow-400', triggerStyle: 'bg-yellow-400/10 text-yellow-700 hover:bg-yellow-400/20' },
   { value: 'confirmed', label: 'Confirmed', dotColor: 'bg-theme-green', triggerStyle: 'bg-theme-green/10 text-theme-green hover:bg-theme-green/20' },
-  { value: 'completed', label: 'Completed', dotColor: 'bg-blue-500', triggerStyle: 'bg-blue-500/10 text-blue-700 hover:bg-blue-500/20' },
   { value: 'cancelled', label: 'Cancelled', dotColor: 'bg-destructive', triggerStyle: 'bg-destructive/10 text-destructive hover:bg-destructive/20' }
 ] as const;
 
 export const getBookingStatusStyle = (status: string): string => {
   const styles: { [key: string]: string } = {
-    'pending_approval': 'bg-orange-100 text-orange-700 dark:bg-orange-700/20 dark:text-orange-400',
-    'pending': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-700/20 dark:text-yellow-400',
     'confirmed': 'bg-green-100 text-green-700 dark:bg-green-700/20 dark:text-green-400',
-    'completed': 'bg-blue-100 text-blue-700 dark:bg-blue-700/20 dark:text-blue-400',
     'cancelled': 'bg-red-100 text-red-700 dark:bg-red-700/20 dark:text-red-400'
   };
   return styles[status] || 'bg-accent text-muted-foreground';
@@ -209,11 +203,11 @@ export const generateSerialNumber = (): string => {
 };
 
 // Async version for sequential serial numbers
-export const generateSequentialSerialNumber = async (): Promise<string> => {
+export const generateSequentialSerialNumber = async (unit: string = 'UNIT-2'): Promise<string> => {
   try {
     // Import the function dynamically to avoid circular dependencies
     const { getNextSerialNumber } = await import('../lib/supabase');
-    return await getNextSerialNumber();
+    return await getNextSerialNumber(unit);
   } catch (error) {
     console.error('Error generating sequential serial number:', error);
     // Fallback to random number
