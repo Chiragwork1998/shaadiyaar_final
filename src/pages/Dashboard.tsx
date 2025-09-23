@@ -34,12 +34,12 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { useNavigate } from 'react-router-dom';
-import { supabase, createPendingApproval, createPartPayment } from '../lib/supabase';
+import { supabase, createPendingApproval, createPartPayment, fetchLeads } from '../lib/supabase';
 import { fetchBookings } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { getAccessLevelDisplayName } from '../utils/permissions';
 import { requiresApproval } from '../utils/permissions';
-import { generateSequentialSerialNumber, LEAD_TYPES, MENU_OPTIONS, HALLS } from '../utils/helpers';
+import { generateSequentialSerialNumber, LEAD_TYPES, MENU_OPTIONS, HALLS, EXTRA_PLATE_PRICES } from '../utils/helpers';
 import toast from 'react-hot-toast';
 
 interface Permission {
@@ -85,9 +85,13 @@ const AddLeadForm: React.FC<{
     type_of_venue: '',
     lead_type: 'Hot Lead',
     type_of_event: '',
-    quotation: '',
+    number_of_pax: '',
     menu_option: '',
-    menu_quote: '',
+    menu_quote_veg_silver: '',
+    menu_quote_veg_gold: '',
+    menu_quote_non_veg_silver: '',
+    menu_quote_non_veg_gold: '',
+    menu_quote_platinum: '',
     updates: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -119,9 +123,13 @@ const AddLeadForm: React.FC<{
         type_of_venue: formData.type_of_venue || '',
         lead_type: formData.lead_type,
         type_of_event: formData.type_of_event || '',
-        quotation: formData.quotation || '',
+        number_of_pax: parseInt(formData.number_of_pax) || 0,
         menu_option: formData.menu_option || '',
-        menu_quote: formData.menu_quote || '',
+        menu_quote_veg_silver: formData.menu_quote_veg_silver || '',
+        menu_quote_veg_gold: formData.menu_quote_veg_gold || '',
+        menu_quote_non_veg_silver: formData.menu_quote_non_veg_silver || '',
+        menu_quote_non_veg_gold: formData.menu_quote_non_veg_gold || '',
+        menu_quote_platinum: formData.menu_quote_platinum || '',
         updates: formData.updates || '',
         status: 'new',
         lead_create_date: new Date().toISOString()
@@ -149,9 +157,13 @@ const AddLeadForm: React.FC<{
         type_of_venue: '',
         lead_type: 'Hot Lead',
         type_of_event: '',
-        quotation: '',
+        number_of_pax: '',
         menu_option: '',
-        menu_quote: '',
+        menu_quote_veg_silver: '',
+        menu_quote_veg_gold: '',
+        menu_quote_non_veg_silver: '',
+        menu_quote_non_veg_gold: '',
+        menu_quote_platinum: '',
         updates: ''
       });
     } catch (error) {
@@ -265,18 +277,18 @@ const AddLeadForm: React.FC<{
               </div>
 
               <div>
-                <label className="text-sm font-medium text-foreground">Quotation</label>
+                <label className="text-sm font-medium text-foreground">Number of Pax (Gathering)</label>
                 <input
-                  type="text"
-                  value={formData.quotation}
-                  onChange={(e) => handleInputChange('quotation', e.target.value)}
+                  type="number"
+                  value={formData.number_of_pax}
+                  onChange={(e) => handleInputChange('number_of_pax', e.target.value)}
                   className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
-                  placeholder="Enter quotation details"
+                  placeholder="Enter number of people"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-3">
               <div>
                 <label className="text-sm font-medium text-foreground">Menu Option</label>
                 <Select value={formData.menu_option} onValueChange={(value) => handleInputChange('menu_option', value)}>
@@ -294,14 +306,59 @@ const AddLeadForm: React.FC<{
               </div>
 
               <div>
-                <label className="text-sm font-medium text-foreground">Menu Quote</label>
-                <input
-                  type="text"
-                  value={formData.menu_quote}
-                  onChange={(e) => handleInputChange('menu_quote', e.target.value)}
-                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
-                  placeholder="Enter menu quote amount"
-                />
+                <h4 className="text-sm font-medium text-foreground mb-2">Menu Quotes</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground">Veg Silver</label>
+                    <input
+                      type="text"
+                      value={formData.menu_quote_veg_silver}
+                      onChange={(e) => handleInputChange('menu_quote_veg_silver', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                      placeholder="Veg Silver quote"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground">Veg Gold</label>
+                    <input
+                      type="text"
+                      value={formData.menu_quote_veg_gold}
+                      onChange={(e) => handleInputChange('menu_quote_veg_gold', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                      placeholder="Veg Gold quote"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground">Non-Veg Silver</label>
+                    <input
+                      type="text"
+                      value={formData.menu_quote_non_veg_silver}
+                      onChange={(e) => handleInputChange('menu_quote_non_veg_silver', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                      placeholder="Non-Veg Silver quote"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground">Non-Veg Gold</label>
+                    <input
+                      type="text"
+                      value={formData.menu_quote_non_veg_gold}
+                      onChange={(e) => handleInputChange('menu_quote_non_veg_gold', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                      placeholder="Non-Veg Gold quote"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="text-xs font-medium text-muted-foreground">Platinum</label>
+                    <input
+                      type="text"
+                      value={formData.menu_quote_platinum}
+                      onChange={(e) => handleInputChange('menu_quote_platinum', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                      placeholder="Platinum quote"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -393,7 +450,7 @@ const AddBookingForm: React.FC<{
     // Financial Details
     gross_amount: '',
     tax_amount: '',
-    extra_plates_amount: '',
+    extra_plates_count: '',
     total_amount: '',
     advance_paid: '',
     balance_amount: '',
@@ -401,6 +458,7 @@ const AddBookingForm: React.FC<{
     // Payment Details
     payment_mode: '',
     payment_mode_other: '',
+    payment_reference_details: '',
     miscellaneous_payments: '',
     other_payments: '',
     
@@ -444,13 +502,12 @@ const AddBookingForm: React.FC<{
       const newData = { ...prev, [field]: value };
       
       // Calculate amounts immediately when relevant fields change
-      if (['gross_amount', 'tax_amount', 'extra_plates_amount', 'advance_paid'].includes(field)) {
+      if (['gross_amount', 'tax_amount', 'advance_paid'].includes(field)) {
         const gross = parseFloat(newData.gross_amount) || 0;
         const tax = parseFloat(newData.tax_amount) || 0;
-        const extraPlates = parseFloat(newData.extra_plates_amount) || 0;
         const advance = parseFloat(newData.advance_paid) || 0;
         
-        const total = gross + tax + extraPlates;
+        const total = gross + tax;
         const balance = total - advance;
         
         return {
@@ -506,12 +563,13 @@ const AddBookingForm: React.FC<{
         theme: formData.theme,
         gross_amount: parseFloat(formData.gross_amount) || 0,
         tax_amount: parseFloat(formData.tax_amount) || 0,
-        extra_plates_amount: parseFloat(formData.extra_plates_amount) || 0,
+        extra_plates_count: parseInt(formData.extra_plates_count) || 0,
         total_amount: parseFloat(formData.total_amount) || 0,
         advance_paid: parseFloat(formData.advance_paid) || 0,
         balance_amount: parseFloat(formData.balance_amount) || 0,
         payment_mode: formData.payment_mode,
         payment_mode_other: formData.payment_mode_other,
+        payment_reference_details: formData.payment_reference_details,
         miscellaneous_payments: parseFloat(formData.miscellaneous_payments) || 0,
         other_payments: parseFloat(formData.other_payments) || 0,
         btr: formData.btr,
@@ -554,12 +612,13 @@ const AddBookingForm: React.FC<{
           theme: '',
           gross_amount: '',
           tax_amount: '',
-          extra_plates_amount: '',
+          extra_plates_count: '',
           total_amount: '',
           advance_paid: '',
           balance_amount: '',
           payment_mode: '',
           payment_mode_other: '',
+          payment_reference_details: '',
           miscellaneous_payments: '',
           other_payments: '',
           btr: '',
@@ -607,7 +666,7 @@ const AddBookingForm: React.FC<{
         theme: '',
         gross_amount: '',
         tax_amount: '',
-        extra_plates_amount: '',
+        extra_plates_count: '',
         total_amount: '',
         advance_paid: '',
         balance_amount: '',
@@ -963,15 +1022,16 @@ const AddBookingForm: React.FC<{
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-foreground">Extra Plates</label>
+                <label className="text-sm font-medium text-foreground">Extra Plates Count</label>
                 <input
                   type="number"
-                  value={formData.extra_plates_amount}
-                  onChange={(e) => handleInputChange('extra_plates_amount', e.target.value)}
+                  value={formData.extra_plates_count}
+                  onChange={(e) => handleInputChange('extra_plates_count', e.target.value)}
                   className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
-                  placeholder="0.00"
-                  step="0.01"
+                  placeholder="0"
+                  min="0"
                 />
+                <p className="text-xs text-muted-foreground mt-1">For tracking purposes only - not included in calculations</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground">Total</label>
@@ -1074,6 +1134,22 @@ const AddBookingForm: React.FC<{
                 />
               </div>
             )}
+
+            {/* Payment Reference Details Field */}
+            {(formData.payment_mode === 'bank_transfer' || formData.payment_mode === 'upi') && (
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Payment Reference Details
+                </label>
+                <input
+                  type="text"
+                  value={formData.payment_reference_details}
+                  onChange={(e) => handleInputChange('payment_reference_details', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  placeholder={formData.payment_mode === 'upi' ? 'Enter UPI ID or Transaction ID' : 'Enter RTGS/Cheque Number'}
+                />
+              </div>
+            )}
           </div>
 
           {/* Additional Details */}
@@ -1149,7 +1225,12 @@ const AddPartPaymentForm: React.FC<{
     client_name: '',
     amount: '',
     payment_date: new Date().toISOString().split('T')[0],
-    description: ''
+    description: '',
+    payment_mode: '',
+    payment_mode_other: '',
+    payment_reference_details: '',
+    miscellaneous_payments: '',
+    other_payments: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -1187,7 +1268,12 @@ const AddPartPaymentForm: React.FC<{
         client_name: selectedBooking?.client_name || formData.client_name,
         amount: parseFloat(formData.amount) || 0,
         payment_date: formData.payment_date,
-        description: formData.description
+        description: formData.description,
+        payment_mode: formData.payment_mode,
+        payment_mode_other: formData.payment_mode_other,
+        payment_reference_details: formData.payment_reference_details,
+        miscellaneous_payments: parseFloat(formData.miscellaneous_payments) || 0,
+        other_payments: parseFloat(formData.other_payments) || 0
       };
 
       // Check if user requires approval
@@ -1216,7 +1302,12 @@ const AddPartPaymentForm: React.FC<{
         client_name: '',
         amount: '',
         payment_date: new Date().toISOString().split('T')[0],
-        description: ''
+        description: '',
+        payment_mode: '',
+        payment_mode_other: '',
+        payment_reference_details: '',
+        miscellaneous_payments: '',
+        other_payments: ''
       });
     } catch (error) {
       console.error('Error adding part payment:', error);
@@ -1303,6 +1394,94 @@ const AddPartPaymentForm: React.FC<{
             />
           </div>
 
+          {/* Payment Details */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-foreground">Payment Details</h3>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Mode of Payment
+                </label>
+                <select
+                  value={formData.payment_mode}
+                  onChange={(e) => handleInputChange('payment_mode', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                >
+                  <option value="">Select payment mode</option>
+                  <option value="cash">Cash</option>
+                  <option value="bank_transfer">Bank Transfer</option>
+                  <option value="upi">UPI</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Payment Mode Other Field */}
+            {formData.payment_mode === 'other' && (
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Specify Payment Mode
+                </label>
+                <input
+                  type="text"
+                  value={formData.payment_mode_other}
+                  onChange={(e) => handleInputChange('payment_mode_other', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  placeholder="Enter payment mode details"
+                />
+              </div>
+            )}
+
+            {/* Payment Reference Details Field */}
+            {(formData.payment_mode === 'bank_transfer' || formData.payment_mode === 'upi') && (
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Payment Reference Details
+                </label>
+                <input
+                  type="text"
+                  value={formData.payment_reference_details}
+                  onChange={(e) => handleInputChange('payment_reference_details', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  placeholder={formData.payment_mode === 'upi' ? 'Enter UPI ID or Transaction ID' : 'Enter RTGS/Cheque Number'}
+                />
+              </div>
+            )}
+
+            {/* Additional Payment Fields */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Miscellaneous Payments
+                </label>
+                <input
+                  type="number"
+                  value={formData.miscellaneous_payments}
+                  onChange={(e) => handleInputChange('miscellaneous_payments', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  placeholder="0.00"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Others
+                </label>
+                <input
+                  type="number"
+                  value={formData.other_payments}
+                  onChange={(e) => handleInputChange('other_payments', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  placeholder="0.00"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+            </div>
+          </div>
+
           <div className="flex flex-col sm:flex-row gap-2 pt-4">
             <Button
               type="button"
@@ -1364,17 +1543,21 @@ const Dashboard = () => {
       try {
         setLoading(true);
         
-        // Fetch bookings data
-        const bookingsData = await fetchBookings();
+        // Fetch both leads and bookings data
+        const [leadsData, bookingsData] = await Promise.all([
+          fetchLeads(),
+          fetchBookings()
+        ]);
+        
         setBookings(bookingsData);
 
         // Calculate stats
         const calculatedStats = {
-          totalLeads: 0, // Mock data
+          totalLeads: leadsData.length,
           activeBookings: bookingsData.filter((b: any) => b.status === 'confirmed').length,
-          upcomingEvents: 0, // Mock data
-          pendingTasks: 0, // Mock data
-          leadGrowth: 12, // Mock data
+          upcomingEvents: 0, // Mock data for now
+          pendingTasks: 0, // Mock data for now
+          leadGrowth: 12, // Mock data for now
           bookingGrowth: 8,
           eventGrowth: 15,
           taskGrowth: -3

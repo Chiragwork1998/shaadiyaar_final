@@ -171,6 +171,19 @@ export const BOOKING_STATUSES = [
   { value: 'cancelled', label: 'Cancelled', dotColor: 'bg-destructive', triggerStyle: 'bg-destructive/10 text-destructive hover:bg-destructive/20' }
 ] as const;
 
+// Fixed extra plate pricing options to prevent negotiation
+export const EXTRA_PLATE_PRICES = [
+  { value: '0', label: 'No Extra Plates - ₹0' },
+  { value: '150', label: '₹150 per plate' },
+  { value: '200', label: '₹200 per plate' },
+  { value: '250', label: '₹250 per plate' },
+  { value: '300', label: '₹300 per plate' },
+  { value: '350', label: '₹350 per plate' },
+  { value: '400', label: '₹400 per plate' },
+  { value: '450', label: '₹450 per plate' },
+  { value: '500', label: '₹500 per plate' }
+] as const;
+
 export const getBookingStatusStyle = (status: string): string => {
   const styles: { [key: string]: string } = {
     'confirmed': 'bg-green-100 text-green-700 dark:bg-green-700/20 dark:text-green-400',

@@ -11,6 +11,15 @@ export interface Lead {
   numeric_budget: number;
   time_to_book_days: number;
   status: string;
+  type_of_event?: string;
+  number_of_pax?: number;
+  menu_option?: string;
+  menu_quote_veg_silver?: string;
+  menu_quote_veg_gold?: string;
+  menu_quote_non_veg_silver?: string;
+  menu_quote_non_veg_gold?: string;
+  menu_quote_platinum?: string;
+  updates?: string;
 }
 
 export type LeadStatus = 'new' | 'contacted' | 'meeting_scheduled' | 'proposal_sent' | 'booked' | 'cancelled' | 'completed';
@@ -197,6 +206,8 @@ export interface Booking {
   gross_amount: number;
   tax_amount: number;
   extra_plates_amount: number;
+  extra_plates_count?: number;
+  extra_plates_price_per_plate?: number;
   total_amount: number;
   advance_paid: number;
   balance_amount: number;
@@ -204,6 +215,7 @@ export interface Booking {
   // Payment Details
   payment_mode?: string; // cash, bank_transfer, upi, other
   payment_mode_other?: string; // Custom text when "other" is selected
+  payment_reference_details?: string; // UPI ID, cheque number, RTGS reference, etc.
   miscellaneous_payments?: number; // Miscellaneous payments amount
   other_payments?: number; // Other payments amount
   
@@ -226,6 +238,11 @@ export interface PartPayment {
   payment_id: number | string; // Can be number for approved payments or string for pending
   booking_id: number | string; // Can be number for approved bookings or string for pending
   client_name: string;
+  payment_mode?: string; // cash, bank_transfer, upi, other
+  payment_mode_other?: string; // Custom text when "other" is selected
+  payment_reference_details?: string; // UPI ID, cheque number, RTGS reference, etc.
+  miscellaneous_payments?: number; // Miscellaneous payments amount
+  other_payments?: number; // Other payments amount
   amount: number;
   payment_date: string;
   description?: string;

@@ -29,7 +29,7 @@ const LeadDetailsSheet: React.FC<LeadDetailsSheetProps> = ({
 }) => {
   const [editedLead, setEditedLead] = useState<Partial<Lead>>({});
   const [isSaving, setIsSaving] = useState(false);
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['contact', 'wedding']));
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['contact', 'wedding', 'event', 'menu', 'notes']));
 
   React.useEffect(() => {
     if (lead) {
@@ -63,7 +63,16 @@ const LeadDetailsSheet: React.FC<LeadDetailsSheetProps> = ({
         numeric_budget: editedLead.numeric_budget,
         type_of_venue: editedLead.type_of_venue,
         lead_type: editedLead.lead_type,
-        status: editedLead.status
+        status: editedLead.status,
+        type_of_event: editedLead.type_of_event,
+        number_of_pax: editedLead.number_of_pax,
+        menu_option: editedLead.menu_option,
+        menu_quote_veg_silver: editedLead.menu_quote_veg_silver,
+        menu_quote_veg_gold: editedLead.menu_quote_veg_gold,
+        menu_quote_non_veg_silver: editedLead.menu_quote_non_veg_silver,
+        menu_quote_non_veg_gold: editedLead.menu_quote_non_veg_gold,
+        menu_quote_platinum: editedLead.menu_quote_platinum,
+        updates: editedLead.updates
       };
 
       const cleanUpdateData = Object.fromEntries(
@@ -285,6 +294,30 @@ const LeadDetailsSheet: React.FC<LeadDetailsSheetProps> = ({
             </>
           )}
 
+          {/* Event Details */}
+          {renderSection(
+            'Event Details',
+            'event',
+            <>
+              {renderField('Type of Event', 'type_of_event', 'text', <Calendar className="w-4 h-4" />)}
+              {renderField('Number of Pax (Gathering)', 'number_of_pax', 'number', <DollarSign className="w-4 h-4" />)}
+            </>
+          )}
+
+          {/* Menu Details */}
+          {renderSection(
+            'Menu Details',
+            'menu',
+            <>
+              {renderField('Menu Option', 'menu_option', 'text', <DollarSign className="w-4 h-4" />)}
+              {renderField('Veg Silver Quote', 'menu_quote_veg_silver', 'text', <DollarSign className="w-4 h-4" />)}
+              {renderField('Veg Gold Quote', 'menu_quote_veg_gold', 'text', <DollarSign className="w-4 h-4" />)}
+              {renderField('Non-Veg Silver Quote', 'menu_quote_non_veg_silver', 'text', <DollarSign className="w-4 h-4" />)}
+              {renderField('Non-Veg Gold Quote', 'menu_quote_non_veg_gold', 'text', <DollarSign className="w-4 h-4" />)}
+              {renderField('Platinum Quote', 'menu_quote_platinum', 'text', <DollarSign className="w-4 h-4" />)}
+            </>
+          )}
+
           {/* Timeline */}
           {renderSection(
             'Timeline',
@@ -322,6 +355,8 @@ const LeadDetailsSheet: React.FC<LeadDetailsSheetProps> = ({
                 rows={4}
                 placeholder="Add notes about this lead..."
                 disabled={!isEditMode}
+                value={editedLead.updates || lead.updates || ''}
+                onChange={(e) => handleInputChange('updates', e.target.value)}
               />
             </div>
           )}

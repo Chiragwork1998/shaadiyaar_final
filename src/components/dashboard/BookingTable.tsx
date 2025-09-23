@@ -245,8 +245,8 @@ const BookingDetailsModal: React.FC<{
                   <span>{formatIndianCurrency(booking.tax_amount)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">Extra Plates Amount:</span>
-                  <span>{formatIndianCurrency(booking.extra_plates_amount)}</span>
+                  <span className="font-medium">Extra Plates Count:</span>
+                  <span>{booking.extra_plates_count || 0}</span>
                 </div>
                 <div className="flex items-center justify-between border-t border-border pt-2">
                   <span className="font-semibold">Total Amount:</span>
@@ -395,7 +395,7 @@ const EditBookingForm: React.FC<{
     // Financial Details
     gross_amount: '',
     tax_amount: '',
-    extra_plates_amount: '',
+    extra_plates_count: '',
     total_amount: '',
     advance_paid: '',
     balance_amount: '',
@@ -403,6 +403,7 @@ const EditBookingForm: React.FC<{
     // Payment Details
     payment_mode: '',
     payment_mode_other: '',
+    payment_reference_details: '',
     miscellaneous_payments: '',
     other_payments: '',
     
@@ -454,7 +455,7 @@ const EditBookingForm: React.FC<{
         // Financial Details - Map both old and new field names
         gross_amount: booking.gross_amount?.toString() || '',
         tax_amount: booking.tax_amount?.toString() || booking.gst_amount?.toString() || '',
-        extra_plates_amount: booking.extra_plates_amount?.toString() || booking.extras_amount?.toString() || '',
+        extra_plates_count: booking.extra_plates_count?.toString() || '0',
         total_amount: booking.total_amount?.toString() || booking.net_amount?.toString() || '',
         advance_paid: booking.advance_paid?.toString() || '',
         balance_amount: booking.balance_amount?.toString() || '',
@@ -462,6 +463,7 @@ const EditBookingForm: React.FC<{
         // Payment Details
         payment_mode: booking.payment_mode || '',
         payment_mode_other: booking.payment_mode_other || '',
+        payment_reference_details: booking.payment_reference_details || '',
         miscellaneous_payments: booking.miscellaneous_payments?.toString() || '',
         other_payments: booking.other_payments?.toString() || '',
         
@@ -480,13 +482,12 @@ const EditBookingForm: React.FC<{
       const newData = { ...prev, [field]: value };
       
       // Calculate amounts immediately when relevant fields change
-      if (['gross_amount', 'tax_amount', 'extra_plates_amount', 'advance_paid'].includes(field)) {
+      if (['gross_amount', 'tax_amount', 'advance_paid'].includes(field)) {
         const gross = parseFloat(newData.gross_amount) || 0;
         const tax = parseFloat(newData.tax_amount) || 0;
-        const extraPlates = parseFloat(newData.extra_plates_amount) || 0;
         const advance = parseFloat(newData.advance_paid) || 0;
         
-        const total = gross + tax + extraPlates;
+        const total = gross + tax;
         const balance = total - advance;
         
         return {
@@ -543,12 +544,13 @@ const EditBookingForm: React.FC<{
         theme: formData.theme,
         gross_amount: parseFloat(formData.gross_amount) || 0,
         tax_amount: parseFloat(formData.tax_amount) || 0,
-        extra_plates_amount: parseFloat(formData.extra_plates_amount) || 0,
+        extra_plates_count: parseInt(formData.extra_plates_count) || 0,
         total_amount: parseFloat(formData.total_amount) || 0,
         advance_paid: parseFloat(formData.advance_paid) || 0,
         balance_amount: parseFloat(formData.balance_amount) || 0,
         payment_mode: formData.payment_mode,
         payment_mode_other: formData.payment_mode_other,
+        payment_reference_details: formData.payment_reference_details,
         miscellaneous_payments: parseFloat(formData.miscellaneous_payments) || 0,
         other_payments: parseFloat(formData.other_payments) || 0,
         btr: formData.btr,
@@ -1027,15 +1029,17 @@ const EditBookingForm: React.FC<{
 
               <div>
                 <label className="text-sm font-medium text-foreground">
-                  Extra Plates
+                  Extra Plates Count
                 </label>
                 <input
                   type="number"
-                  value={formData.extra_plates_amount}
-                  onChange={(e) => handleInputChange('extra_plates_amount', e.target.value)}
+                  value={formData.extra_plates_count}
+                  onChange={(e) => handleInputChange('extra_plates_count', e.target.value)}
                   className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
-                  placeholder="Enter extra plates amount"
+                  placeholder="0"
+                  min="0"
                 />
+                <p className="text-xs text-muted-foreground mt-1">For tracking purposes only - not included in calculations</p>
               </div>
 
               <div>
@@ -1094,6 +1098,22 @@ const EditBookingForm: React.FC<{
                     onChange={(e) => handleInputChange('payment_mode_other', e.target.value)}
                     className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
                     placeholder="Enter payment mode details"
+                  />
+                </div>
+              )}
+
+              {/* Payment Reference Details Field */}
+              {(formData.payment_mode === 'bank_transfer' || formData.payment_mode === 'upi') && (
+                <div>
+                  <label className="text-sm font-medium text-foreground">
+                    Payment Reference Details
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.payment_reference_details}
+                    onChange={(e) => handleInputChange('payment_reference_details', e.target.value)}
+                    className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                    placeholder={formData.payment_mode === 'upi' ? 'Enter UPI ID or Transaction ID' : 'Enter RTGS/Cheque Number'}
                   />
                 </div>
               )}
@@ -1681,7 +1701,7 @@ const AddBookingForm: React.FC<{
     // Financial Details
     gross_amount: '',
     tax_amount: '',
-    extra_plates_amount: '',
+    extra_plates_count: '',
     total_amount: '',
     advance_paid: '',
     balance_amount: '',
@@ -1689,6 +1709,7 @@ const AddBookingForm: React.FC<{
     // Payment Details
     payment_mode: '',
     payment_mode_other: '',
+    payment_reference_details: '',
     miscellaneous_payments: '',
     other_payments: '',
     
@@ -1732,13 +1753,12 @@ const AddBookingForm: React.FC<{
       const newData = { ...prev, [field]: value };
       
       // Calculate amounts immediately when relevant fields change
-      if (['gross_amount', 'tax_amount', 'extra_plates_amount', 'advance_paid'].includes(field)) {
+      if (['gross_amount', 'tax_amount', 'advance_paid'].includes(field)) {
         const gross = parseFloat(newData.gross_amount) || 0;
         const tax = parseFloat(newData.tax_amount) || 0;
-        const extraPlates = parseFloat(newData.extra_plates_amount) || 0;
         const advance = parseFloat(newData.advance_paid) || 0;
         
-        const total = gross + tax + extraPlates;
+        const total = gross + tax;
         const balance = total - advance;
         
         return {
@@ -1801,12 +1821,13 @@ const AddBookingForm: React.FC<{
         theme: formData.theme,
         gross_amount: parseFloat(formData.gross_amount) || 0,
         tax_amount: parseFloat(formData.tax_amount) || 0,
-        extra_plates_amount: parseFloat(formData.extra_plates_amount) || 0,
+        extra_plates_count: parseInt(formData.extra_plates_count) || 0,
         total_amount: parseFloat(formData.total_amount) || 0,
         advance_paid: parseFloat(formData.advance_paid) || 0,
         balance_amount: parseFloat(formData.balance_amount) || 0,
         payment_mode: formData.payment_mode,
         payment_mode_other: formData.payment_mode_other,
+        payment_reference_details: formData.payment_reference_details,
         miscellaneous_payments: parseFloat(formData.miscellaneous_payments) || 0,
         other_payments: parseFloat(formData.other_payments) || 0,
         btr: formData.btr,
@@ -1891,7 +1912,7 @@ const AddBookingForm: React.FC<{
           theme: '',
           gross_amount: '',
           tax_amount: '',
-          extra_plates_amount: '',
+          extra_plates_count: '',
           total_amount: '',
           advance_paid: '',
           balance_amount: '',
@@ -1944,7 +1965,7 @@ const AddBookingForm: React.FC<{
         theme: '',
         gross_amount: '',
         tax_amount: '',
-        extra_plates_amount: '',
+        extra_plates_count: '',
         total_amount: '',
         advance_paid: '',
         balance_amount: '',
@@ -2300,15 +2321,16 @@ const AddBookingForm: React.FC<{
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-foreground">Extra Plates</label>
+                <label className="text-sm font-medium text-foreground">Extra Plates Count</label>
                 <input
                   type="number"
-                  value={formData.extra_plates_amount}
-                  onChange={(e) => handleInputChange('extra_plates_amount', e.target.value)}
+                  value={formData.extra_plates_count}
+                  onChange={(e) => handleInputChange('extra_plates_count', e.target.value)}
                   className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
-                  placeholder="0.00"
-                  step="0.01"
+                  placeholder="0"
+                  min="0"
                 />
+                <p className="text-xs text-muted-foreground mt-1">For tracking purposes only - not included in calculations</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground">Total</label>
@@ -2408,6 +2430,22 @@ const AddBookingForm: React.FC<{
                   onChange={(e) => handleInputChange('payment_mode_other', e.target.value)}
                   className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
                   placeholder="Enter payment mode details"
+                />
+              </div>
+            )}
+
+            {/* Payment Reference Details Field */}
+            {(formData.payment_mode === 'bank_transfer' || formData.payment_mode === 'upi') && (
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Payment Reference Details
+                </label>
+                <input
+                  type="text"
+                  value={formData.payment_reference_details}
+                  onChange={(e) => handleInputChange('payment_reference_details', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  placeholder={formData.payment_mode === 'upi' ? 'Enter UPI ID or Transaction ID' : 'Enter RTGS/Cheque Number'}
                 />
               </div>
             )}

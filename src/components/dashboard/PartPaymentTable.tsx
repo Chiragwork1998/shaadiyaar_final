@@ -38,7 +38,12 @@ const AddPartPaymentForm: React.FC<{
     client_name: '',
     amount: '',
     payment_date: new Date().toISOString().split('T')[0],
-    description: ''
+    description: '',
+    payment_mode: '',
+    payment_mode_other: '',
+    payment_reference_details: '',
+    miscellaneous_payments: '',
+    other_payments: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -82,7 +87,12 @@ const AddPartPaymentForm: React.FC<{
         client_name: selectedBooking?.client_name || formData.client_name,
         amount: parseFloat(formData.amount) || 0,
         payment_date: formData.payment_date,
-        description: formData.description
+        description: formData.description,
+        payment_mode: formData.payment_mode,
+        payment_mode_other: formData.payment_mode_other,
+        payment_reference_details: formData.payment_reference_details,
+        miscellaneous_payments: parseFloat(formData.miscellaneous_payments) || 0,
+        other_payments: parseFloat(formData.other_payments) || 0
       };
 
       // Validate part payment data before submission
@@ -155,7 +165,12 @@ const AddPartPaymentForm: React.FC<{
           client_name: '',
           amount: '',
           payment_date: new Date().toISOString().split('T')[0],
-          description: ''
+          description: '',
+          payment_mode: '',
+          payment_mode_other: '',
+          payment_reference_details: '',
+          miscellaneous_payments: '',
+          other_payments: ''
         });
         onClose();
         return;
@@ -271,6 +286,94 @@ const AddPartPaymentForm: React.FC<{
               placeholder="Enter payment description"
               rows={3}
             />
+          </div>
+
+          {/* Payment Details */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-foreground">Payment Details</h3>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Mode of Payment
+                </label>
+                <select
+                  value={formData.payment_mode}
+                  onChange={(e) => handleInputChange('payment_mode', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                >
+                  <option value="">Select payment mode</option>
+                  <option value="cash">Cash</option>
+                  <option value="bank_transfer">Bank Transfer</option>
+                  <option value="upi">UPI</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Payment Mode Other Field */}
+            {formData.payment_mode === 'other' && (
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Specify Payment Mode
+                </label>
+                <input
+                  type="text"
+                  value={formData.payment_mode_other}
+                  onChange={(e) => handleInputChange('payment_mode_other', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  placeholder="Enter payment mode details"
+                />
+              </div>
+            )}
+
+            {/* Payment Reference Details Field */}
+            {(formData.payment_mode === 'bank_transfer' || formData.payment_mode === 'upi') && (
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Payment Reference Details
+                </label>
+                <input
+                  type="text"
+                  value={formData.payment_reference_details}
+                  onChange={(e) => handleInputChange('payment_reference_details', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  placeholder={formData.payment_mode === 'upi' ? 'Enter UPI ID or Transaction ID' : 'Enter RTGS/Cheque Number'}
+                />
+              </div>
+            )}
+
+            {/* Additional Payment Fields */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Miscellaneous Payments
+                </label>
+                <input
+                  type="number"
+                  value={formData.miscellaneous_payments}
+                  onChange={(e) => handleInputChange('miscellaneous_payments', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  placeholder="0.00"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground">
+                  Others
+                </label>
+                <input
+                  type="number"
+                  value={formData.other_payments}
+                  onChange={(e) => handleInputChange('other_payments', e.target.value)}
+                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                  placeholder="0.00"
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+            </div>
           </div>
         </form>
 

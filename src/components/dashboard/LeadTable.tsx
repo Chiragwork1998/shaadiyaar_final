@@ -37,9 +37,13 @@ const AddLeadForm: React.FC<{
     lead_type: 'Hot Lead',
     status: 'new',
     type_of_event: '',
-    quotation: '',
+    number_of_pax: '',
     menu_option: '',
-    menu_quote: '',
+    menu_quote_veg_silver: '',
+    menu_quote_veg_gold: '',
+    menu_quote_non_veg_silver: '',
+    menu_quote_non_veg_gold: '',
+    menu_quote_platinum: '',
     updates: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -77,9 +81,13 @@ const AddLeadForm: React.FC<{
           lead_type: formData.lead_type,
           status: formData.status,
           type_of_event: formData.type_of_event || '',
-          quotation: formData.quotation || '',
+          number_of_pax: parseInt(formData.number_of_pax) || 0,
           menu_option: formData.menu_option || '',
-          menu_quote: formData.menu_quote || '',
+          menu_quote_veg_silver: formData.menu_quote_veg_silver || '',
+          menu_quote_veg_gold: formData.menu_quote_veg_gold || '',
+          menu_quote_non_veg_silver: formData.menu_quote_non_veg_silver || '',
+          menu_quote_non_veg_gold: formData.menu_quote_non_veg_gold || '',
+          menu_quote_platinum: formData.menu_quote_platinum || '',
           updates: formData.updates || '',
           lead_create_date: new Date().toISOString()
         }])
@@ -99,9 +107,13 @@ const AddLeadForm: React.FC<{
         lead_type: 'Hot Lead',
         status: 'new',
         type_of_event: '',
-        quotation: '',
+        number_of_pax: '',
         menu_option: '',
-        menu_quote: '',
+        menu_quote_veg_silver: '',
+        menu_quote_veg_gold: '',
+        menu_quote_non_veg_silver: '',
+        menu_quote_non_veg_gold: '',
+        menu_quote_platinum: '',
         updates: ''
       });
       onClose();
@@ -256,18 +268,18 @@ const AddLeadForm: React.FC<{
               </div>
 
               <div>
-                <label className="text-sm font-medium text-foreground">Quotation</label>
+                <label className="text-sm font-medium text-foreground">Number of Pax (Gathering)</label>
                 <input
-                  type="text"
-                  value={formData.quotation}
-                  onChange={(e) => handleInputChange('quotation', e.target.value)}
+                  type="number"
+                  value={formData.number_of_pax}
+                  onChange={(e) => handleInputChange('number_of_pax', e.target.value)}
                   className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
-                  placeholder="Enter quotation details"
+                  placeholder="Enter number of people"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-3">
               <div>
                 <label className="text-sm font-medium text-foreground">Menu Option</label>
                 <Select value={formData.menu_option} onValueChange={(value) => handleInputChange('menu_option', value)}>
@@ -285,14 +297,59 @@ const AddLeadForm: React.FC<{
               </div>
 
               <div>
-                <label className="text-sm font-medium text-foreground">Menu Quote</label>
-                <input
-                  type="text"
-                  value={formData.menu_quote}
-                  onChange={(e) => handleInputChange('menu_quote', e.target.value)}
-                  className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
-                  placeholder="Enter menu quote amount"
-                />
+                <h4 className="text-sm font-medium text-foreground mb-2">Menu Quotes</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground">Veg Silver</label>
+                    <input
+                      type="text"
+                      value={formData.menu_quote_veg_silver}
+                      onChange={(e) => handleInputChange('menu_quote_veg_silver', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                      placeholder="Veg Silver quote"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground">Veg Gold</label>
+                    <input
+                      type="text"
+                      value={formData.menu_quote_veg_gold}
+                      onChange={(e) => handleInputChange('menu_quote_veg_gold', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                      placeholder="Veg Gold quote"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground">Non-Veg Silver</label>
+                    <input
+                      type="text"
+                      value={formData.menu_quote_non_veg_silver}
+                      onChange={(e) => handleInputChange('menu_quote_non_veg_silver', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                      placeholder="Non-Veg Silver quote"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground">Non-Veg Gold</label>
+                    <input
+                      type="text"
+                      value={formData.menu_quote_non_veg_gold}
+                      onChange={(e) => handleInputChange('menu_quote_non_veg_gold', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                      placeholder="Non-Veg Gold quote"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="text-xs font-medium text-muted-foreground">Platinum</label>
+                    <input
+                      type="text"
+                      value={formData.menu_quote_platinum}
+                      onChange={(e) => handleInputChange('menu_quote_platinum', e.target.value)}
+                      className="w-full mt-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
+                      placeholder="Platinum quote"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
